@@ -1,0 +1,1519 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>RMS SLEEP'N Atocha</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0f1420; --panel:#161d2e; --panel2:#1d263b; --border:#2a3550;
+    --text:#e8ecf4; --muted:#92a0bf; --accent:#5b8cff; --accent2:#30c9a4;
+    --warn:#f5a623; --bad:#f25f5c; --good:#30c9a4;
+    --radius:10px;
+  }
+  @media (prefers-color-scheme: light){
+    :root{ --bg:#f4f6fb; --panel:#ffffff; --panel2:#eef1f8; --border:#dde3f0; --text:#1b2333; --muted:#5b6780;
+           --warn:#b9770e; --bad:#c0392b; --good:#16876d; }
+  }
+  *{box-sizing:border-box;}
+  .comp-celda{background:none;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:4px 8px;cursor:pointer;text-align:right;font:inherit;min-width:92px;}
+  .comp-celda:hover{border-color:var(--accent);}
+  .comp-celda .nota{display:block;}
+  tr.comp-detalle > td{background:var(--panel2);}
+  .comp-tabla{width:auto;min-width:0;border-collapse:collapse;font-size:13px;}
+  .comp-tabla td{padding:5px 8px;border-bottom:1px solid var(--border);vertical-align:top;}
+  .comp-tabla td.p{text-align:right;white-space:nowrap;font-weight:600;}
+  .comp-tabla td.nt{text-align:center;color:var(--muted);}
+  .comp-tabla tr.yo td{background:rgba(91,140,255,.16);font-weight:700;}
+  .comp-tabla .hab{color:var(--muted);font-size:12px;font-weight:400;}
+  .comp-g{color:#5082c7;font-weight:700;margin-left:4px;}
+  .comp-m{color:#d99a00;font-weight:700;margin-left:4px;}
+  .comp-resumen{margin-top:6px;}
+  #tabla-comp{font-size:13px;}
+  #tabla-comp th{white-space:normal;min-width:74px;max-width:110px;vertical-align:bottom;font-size:12px;}
+  #tabla-comp td{text-align:right;white-space:nowrap;cursor:pointer;}
+  #tabla-comp th:first-child, #tabla-comp td:first-child{position:sticky;left:0;z-index:1;background:var(--panel);text-align:left;}
+  #tabla-comp td.yo, #tabla-comp th.yo{background:rgba(91,140,255,.16);font-weight:700;}
+  #tabla-comp td.mas-barato{background:rgba(242,95,92,.16);}
+  #tabla-comp td.mas-caro{background:rgba(48,201,164,.13);}
+  #tabla-comp td.minimo .cp{text-decoration:underline;font-weight:700;}
+  #tabla-comp td .nota{font-size:11px;}
+  #tabla-comp tr.comp-detalle td{cursor:default;text-align:left;white-space:normal;position:static;}
+  .comp-resumen summary{cursor:pointer;}
+  .comp-resumen .tabla-scroll{margin-top:6px;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+  header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);
+         background:var(--panel);position:sticky;top:0;z-index:10;flex-wrap:wrap;gap:8px;}
+  header h1{font-size:17px;margin:0;font-weight:700;}
+  header .meta{font-size:12px;color:var(--muted);}
+  .cabecera-der{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end;}
+  .usuario-sesion{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;}
+  .usuario-sesion:empty{display:none;}
+  #acceso{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px 16px;overflow:auto;}
+  #acceso[hidden]{display:none;}
+  #acceso .caja-acceso{width:100%;max-width:360px;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:26px 22px;}
+  #acceso h1{font-size:18px;margin:0 0 4px;} #acceso .sub{font-size:13px;color:var(--muted);margin:0 0 20px;}
+  #acceso label.campo{display:block;font-size:12px;color:var(--muted);margin:0 0 6px;font-weight:600;}
+  #acceso input[type=text], #acceso input[type=password]{width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:11px 12px;font-size:15px;margin-bottom:14px;}
+  #acceso .recordar{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin:0 0 16px;}
+  #acceso button{width:100%;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:12px;font-size:15px;font-weight:700;cursor:pointer;}
+  #acceso button:disabled{opacity:.6;cursor:default;}
+  #acceso .error{color:var(--bad);font-size:13px;min-height:18px;margin-top:12px;line-height:1.4;}
+  #acceso .pie{font-size:11px;color:var(--muted);margin-top:16px;line-height:1.45;}
+  nav{display:flex;gap:4px;padding:10px 20px;background:var(--panel);border-bottom:1px solid var(--border);
+      overflow-x:auto;position:sticky;top:53px;z-index:9;}
+  nav button{background:transparent;border:1px solid transparent;color:var(--muted);padding:8px 14px;border-radius:8px;
+             cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;}
+  nav button.activo{background:var(--accent);color:#fff;}
+  main{padding:18px 16px 60px;max-width:1280px;margin:0 auto;}
+  .pantalla{display:none;}
+  .pantalla.activa{display:block;}
+  .tarjetas{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:18px;}
+  .tarjeta{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;}
+  .tarjeta .etiqueta{font-size:12px;color:var(--muted);margin-bottom:6px;}
+  .tarjeta .valor{font-size:22px;font-weight:700;}
+  .tarjeta .delta{font-size:12px;margin-top:4px;color:var(--muted);}
+  .caja{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;}
+  .caja h2{font-size:14px;margin:0 0 12px;color:var(--text);}
+  .nota{font-size:12px;color:var(--muted);line-height:1.45;}
+  .fila-controles{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+  .fila-controles label{font-size:12px;color:var(--muted);margin-right:4px;}
+  select, input[type=date], input[type=number], input[type=text]{background:var(--panel2);color:var(--text);border:1px solid var(--border);
+         border-radius:6px;padding:6px 8px;font-size:13px;}
+  .tabla-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);vertical-align:top;}
+  th{color:var(--muted);font-weight:600;font-size:12px;white-space:nowrap;}
+  td.n, th.n{text-align:right;white-space:nowrap;}
+  tr:hover td{background:var(--panel2);}
+  .pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;background:var(--panel2);
+        color:var(--muted);margin:1px 3px 1px 0;}
+  .imp3{background:#f25f5c33;color:var(--bad);} .imp2{background:#f5a62333;color:var(--warn);} .imp1{background:var(--panel2);color:var(--muted);}
+  .nuevo{background:#5b8cff33;color:var(--accent);}
+  .sube{color:var(--good);font-weight:700;} .baja{color:var(--bad);font-weight:700;} .igual{color:var(--muted);}
+  .pos{color:var(--good);} .neg{color:var(--bad);}
+  .motivos{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.35;}
+  .vacio{color:var(--muted);font-size:13px;padding:20px 0;text-align:center;}
+  canvas{max-height:360px;}
+  .dos-col{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;}
+  @media (max-width:800px){ .dos-col{grid-template-columns:1fr;} main{padding:14px 16px 60px;} }
+  .barra-mini{height:5px;border-radius:3px;background:var(--panel2);overflow:hidden;margin-top:4px;width:70px;}
+  .barra-mini > div{height:100%;background:var(--accent);}
+  .control-precio{border:1px dashed var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:16px;background:var(--panel2);}
+  .control-precio h3{font-size:13px;margin:0 0 8px;color:var(--text);}
+  .control-precio .fila{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .control-precio .actual{font-size:12px;color:var(--muted);margin-bottom:8px;}
+  .stepper{display:flex;align-items:center;border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+  .stepper button{background:var(--panel);border:none;color:var(--text);width:30px;height:30px;font-size:13px;font-weight:700;cursor:pointer;}
+  .stepper button:hover{background:var(--accent);color:#fff;}
+  .stepper input{width:76px;border:none;border-left:1px solid var(--border);border-right:1px solid var(--border);text-align:center;
+                 background:var(--panel);color:var(--text);font-size:13px;padding:6px 2px;border-radius:0;}
+  .control-precio input.nota-in{flex:1;min-width:160px;}
+  .control-precio input.ind{width:90px;}
+  .btn{background:var(--accent);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;}
+  .btn:disabled{opacity:.5;cursor:default;}
+  .btn-sec{background:transparent;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:3px 9px;font-size:12px;font-weight:700;cursor:pointer;}
+  .estado-cola{font-size:12px;margin-top:8px;min-height:16px;}
+  .estado-cola.ok{color:var(--good);} .estado-cola.error{color:var(--bad);} .estado-cola.espera{color:var(--muted);} .estado-cola.aviso{color:var(--warn);}
+  .fila-cambio{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px;}
+  .fila-cambio:last-child{border-bottom:none;}
+  .badge-confirmado{color:var(--good);font-weight:700;} .badge-fallo{color:var(--bad);font-weight:700;}
+  .check{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px;}
+  a{color:var(--accent);}
+  .aviso-global{display:none;max-width:1280px;margin:12px auto 0;padding:10px 14px;border-radius:var(--radius);font-size:13px;line-height:1.45;
+                background:#f25f5c22;border:1px solid var(--bad);color:var(--text);}
+  .aviso-global.leve{background:#f5a62322;border-color:var(--warn);}
+  .aviso-global strong{color:var(--bad);} .aviso-global.leve strong{color:var(--warn);}
+  @media (max-width:800px){ .aviso-global{margin:12px 16px 0;} }
+</style>
+</head>
+<body>
+<div id="acceso" hidden>
+  <div class="caja-acceso">
+    <h1>RMS SLEEP'N Atocha</h1>
+    <p class="sub">Acceso restringido al equipo del hotel.</p>
+    <form id="form-acceso" autocomplete="on" novalidate>
+      <label class="campo" for="acc-usuario">Usuario</label>
+      <input type="text" id="acc-usuario" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
+      <label class="campo" for="acc-clave">Contraseña</label>
+      <input type="password" id="acc-clave" name="password" autocomplete="current-password">
+      <label class="recordar"><input type="checkbox" id="acc-recordar" checked> Recordar en este dispositivo 7 días</label>
+      <button id="acc-entrar" type="submit">Entrar</button>
+      <div class="error" id="acc-error" role="alert"></div>
+    </form>
+    <p class="pie">Los datos viajan cifrados y solo se descifran aquí, con tu contraseña.</p>
+  </div>
+</div>
+
+<header>
+  <div><h1 id="titulo-hotel">RMS SLEEP'N Atocha</h1></div>
+  <div class="cabecera-der"><span class="meta" id="meta-actualizado">Cargando…</span><span class="usuario-sesion" id="usuario-sesion"></span></div>
+</header>
+
+<nav>
+  <button data-tab="resumen" class="activo">Resumen</button>
+  <button data-tab="calendario">Calendario</button>
+  <button data-tab="competencia">Competencia</button>
+  <button data-tab="panel">Panel RMS</button>
+  <button data-tab="pickup">Pickup</button>
+  <button data-tab="evolucion">Evolución</button>
+  <button data-tab="eventos">Eventos</button>
+  <button data-tab="canales">Canales</button>
+  <button data-tab="grupos">Grupos</button>
+  <button data-tab="sem">SEM</button>
+</nav>
+<div class="aviso-global" id="aviso-datos" role="alert"></div>
+
+<main>
+
+  <!-- ===================== RESUMEN ===================== -->
+  <section class="pantalla activa" id="tab-resumen">
+    <div class="tarjetas" id="tarjetas-resumen"></div>
+    <div id="control-precio-resumen"></div>
+    <div class="dos-col">
+      <div class="caja">
+        <h2>Ocupación próximos 30 días</h2>
+        <canvas id="chart-resumen-ocup"></canvas>
+      </div>
+      <div class="caja">
+        <h2>Próximos 30 días con evento</h2>
+        <div id="lista-eventos-proximos"></div>
+      </div>
+    </div>
+    <div class="dos-col">
+      <div class="caja">
+        <h2>Decisiones de precio recientes</h2>
+        <div id="lista-decisiones"></div>
+      </div>
+      <div class="caja">
+        <h2>Últimas alertas de la regla de subida</h2>
+        <div id="lista-alertas"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== CALENDARIO ===================== -->
+  <section class="pantalla" id="tab-calendario">
+    <div class="fila-controles">
+      <label>Ver</label>
+      <select id="cal-rango">
+        <option value="14">Próximos 14 días</option>
+        <option value="30">Próximos 30 días</option>
+        <option value="90" selected>Próximos 90 días</option>
+        <option value="180">Próximos 180 días</option>
+        <option value="365">Próximos 365 días</option>
+      </select>
+      <label class="check"><input type="checkbox" id="cal-solo-cambios"> Solo con recomendación de cambio</label>
+      <label class="check"><input type="checkbox" id="cal-solo-eventos"> Solo con evento</label>
+    </div>
+    <div class="nota" id="cal-estado" style="margin-bottom:10px;"></div>
+    <div id="control-precio-calendario"></div>
+    <div class="caja" style="padding:8px 8px 4px;">
+      <div class="tabla-scroll">
+        <table id="tabla-calendario">
+          <thead><tr>
+            <th>Noche</th><th>Eventos</th><th class="n">Ocupación</th><th class="n">Pickup 7 d</th>
+            <th class="n">Año ant. misma antelación</th><th class="n">Previsión</th><th class="n">BAR SA / IND SA</th><th class="n">Competencia</th>
+            <th>Recomendado</th><th>Sugerencias</th><th></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="vacio" id="cal-vacio" style="display:none;">No hay fechas con esos filtros.</div>
+    </div>
+    <div class="dos-col">
+      <div class="caja">
+        <h2>¿Cuánto fiarse de la previsión?</h2>
+        <div id="cal-fiabilidad"></div>
+      </div>
+      <div class="caja">
+        <h2>Qué parte de lo vendido acaba cancelándose</h2>
+        <div id="cal-cancelacion"></div>
+      </div>
+    </div>
+    <div class="caja nota" id="cal-explicacion"></div>
+  </section>
+
+  <!-- ===================== COMPETENCIA ===================== -->
+  <section class="pantalla" id="tab-competencia">
+    <div class="fila-controles">
+      <label>Ver</label>
+      <select id="comp-rango">
+        <option value="14">Próximos 14 días</option>
+        <option value="30" selected>Próximos 30 días</option>
+        <option value="60">Próximos 60 días</option>
+        <option value="90">Próximos 90 días</option>
+        <option value="180">Próximos 180 días</option>
+        <option value="365">Próximos 365 días</option>
+      </select>
+      <label class="check"><input type="checkbox" id="comp-solo-finde"> Solo viernes y sábado</label>
+      <button type="button" class="btn-sec" id="comp-csv">Descargar CSV</button>
+    </div>
+    <div class="nota" id="comp-estado" style="margin-bottom:10px;"></div>
+    <div class="caja" style="padding:8px 8px 4px;">
+      <div class="tabla-scroll"><table id="tabla-comp"><thead></thead><tbody></tbody></table></div>
+      <div class="vacio" id="comp-vacio" style="display:none;">Todavía no hay precios de competencia: se leen en la primera vuelta del día.</div>
+    </div>
+    <div class="caja nota" id="comp-leyenda">
+      Cada celda es el precio de ese hotel en Booking para esa noche (su habitación más barata), tal como lo recoge GuestPro.
+      Debajo: <strong>NR</strong> no reembolsable / <strong>FLEX</strong> flexible, <strong>G</strong> descuento Genius, <strong>M</strong> precio móvil.
+      <span style="background:rgba(242,95,92,.16);padding:0 4px;border-radius:4px;">Rojo</span>: más barato que nosotros esa noche.
+      <span style="background:rgba(48,201,164,.13);padding:0 4px;border-radius:4px;">Verde</span>: más caro que nosotros.
+      Subrayado: el más barato de la noche. «—»: ese hotel no tiene precio esa noche (normalmente, completo).
+      «Nosotros» es nuestro precio en Booking (con Genius sale un 10 % por debajo de BAR SA). Toca una fila para ver hoteles, habitaciones y tarifas.
+      GuestPro actualiza estos precios una vez al día, de madrugada; el panel los lee en la primera vuelta de la mañana.
+    </div>
+  </section>
+
+  <!-- ===================== PANEL RMS ===================== -->
+  <section class="pantalla" id="tab-panel">
+    <div class="fila-controles">
+      <label>Desde</label><input type="date" id="panel-desde">
+      <label>Hasta</label><input type="date" id="panel-hasta">
+      <select id="panel-rango-rapido">
+        <option value="30">Próximos 30 días</option>
+        <option value="90" selected>Próximos 90 días</option>
+        <option value="180">Próximos 180 días</option>
+        <option value="365">Próximos 365 días</option>
+        <option value="custom">Rango personalizado</option>
+      </select>
+      <label>Métrica</label>
+      <select id="panel-metrica">
+        <option value="occ" selected>Ocupación</option>
+        <option value="adr">Precio medio (ADR)</option>
+        <option value="revpar">RevPAR</option>
+        <option value="trevpar">Ingreso total por habitación (TRevPAR)</option>
+      </select>
+    </div>
+    <div class="caja">
+      <h2 id="panel-metrica-titulo">Ocupación</h2>
+      <canvas id="chart-panel-ocup"></canvas>
+      <div class="nota" id="panel-nota" style="margin-top:8px;"></div>
+    </div>
+    <div class="caja">
+      <h2>Noches por canal (periodo seleccionado)</h2>
+      <canvas id="chart-panel-canales" style="max-height:300px;"></canvas>
+    </div>
+  </section>
+
+  <!-- ===================== PICKUP ===================== -->
+  <section class="pantalla" id="tab-pickup">
+    <div class="fila-controles">
+      <label>Reservas entradas el día</label>
+      <select id="pickup-dia"></select>
+      <label>Fechas de estancia</label>
+      <select id="pickup-ventana">
+        <option value="7" selected>Próximos 7 días</option>
+        <option value="14">Próximos 14 días</option>
+        <option value="30">Próximos 30 días</option>
+        <option value="365">Todas las futuras</option>
+      </select>
+    </div>
+    <div class="caja">
+      <h2 id="pickup-titulo">Reservas entradas</h2>
+      <div class="tabla-scroll">
+        <table id="tabla-pickup">
+          <thead><tr><th>Fecha de estancia</th><th class="n">Reservas</th><th class="n">Noches</th><th class="n">Importe</th><th class="n">Hab. ocupadas / disponibles</th><th>Canales</th><th>Países</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="vacio" id="pickup-vacio" style="display:none;">No hay reservas entradas ese día para el rango elegido.</div>
+    </div>
+    <div class="caja">
+      <h2>Fechas de estancia más vendidas ese día (por noches)</h2>
+      <canvas id="chart-pickup-top"></canvas>
+    </div>
+  </section>
+
+  <!-- ===================== EVOLUCION ===================== -->
+  <section class="pantalla" id="tab-evolucion">
+    <div class="fila-controles">
+      <label>Fecha de estancia</label>
+      <select id="evolucion-fecha"></select>
+    </div>
+    <div class="tarjetas" id="evolucion-tarjetas"></div>
+    <div class="caja">
+      <h2>Curva de reservas: este año frente al año anterior (misma noche -364 días)</h2>
+      <canvas id="chart-evolucion-curva"></canvas>
+      <div class="nota" style="margin-top:8px;">Habitaciones vivas para esa noche según los días que faltaban para la llegada, reconstruidas desde el
+        histórico de reservas (las canceladas cuentan hasta el día en que se cancelaron).</div>
+    </div>
+    <div class="caja">
+      <h2>Cambios de precio de esta fecha</h2>
+      <div id="evolucion-decisiones"></div>
+    </div>
+  </section>
+
+  <!-- ===================== EVENTOS ===================== -->
+  <section class="pantalla" id="tab-eventos">
+    <div class="fila-controles">
+      <label>Impacto</label>
+      <select id="eventos-impacto">
+        <option value="2" selected>Medio y alto</option>
+        <option value="3">Solo alto</option>
+        <option value="1">Todos</option>
+      </select>
+      <label>Ver</label>
+      <select id="eventos-meses">
+        <option value="3">Próximos 3 meses</option>
+        <option value="6">Próximos 6 meses</option>
+        <option value="12" selected>Próximos 12 meses</option>
+        <option value="24">Todo</option>
+      </select>
+    </div>
+    <div class="nota" id="eventos-fuentes" style="margin-bottom:10px;"></div>
+    <div id="eventos-lista"></div>
+    <div class="caja">
+      <h2>A vigilar (anunciados sin fecha o sin confirmar)</h2>
+      <div id="eventos-vigilar"></div>
+    </div>
+    <div class="caja nota" id="eventos-explicacion"></div>
+  </section>
+
+  <!-- ===================== CANALES ===================== -->
+  <section class="pantalla" id="tab-canales">
+    <div class="fila-controles">
+      <label>Periodo (mes de estancia)</label>
+      <select id="canales-periodo"></select>
+    </div>
+    <div class="tarjetas" id="canales-tarjetas"></div>
+    <div class="caja">
+      <h2>Por canal</h2>
+      <div class="tabla-scroll"><table id="tabla-canales"><thead></thead><tbody></tbody></table></div>
+      <div class="nota" style="margin-top:6px;">Ingreso = importe de habitaciones sin IVA repartido por noche. Neto = ingreso menos la comisión que trae
+        cada reserva (Expedia ya llega neta, por eso su comisión sale a 0). El coste SEM de Google Ads se resta de la web directa.</div>
+    </div>
+    <div class="caja">
+      <h2>Por segmento</h2>
+      <div class="tabla-scroll"><table id="tabla-segmentos"><thead></thead><tbody></tbody></table></div>
+    </div>
+    <div class="dos-col">
+      <div class="caja">
+        <h2>Ritmo por segmento: próximas 90 noches frente al año anterior a la misma antelación</h2>
+        <div class="tabla-scroll"><table id="tabla-ritmo-seg"><thead><tr><th>Segmento</th><th class="n">Hoy</th><th class="n">Año anterior</th><th class="n">Diferencia</th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div class="caja">
+        <h2>Nacionalidades de las próximas noches</h2>
+        <div class="fila-controles">
+          <select id="canales-paises-rango">
+            <option value="30">Próximos 30 días</option>
+            <option value="90" selected>Próximos 90 días</option>
+            <option value="180">Próximos 180 días</option>
+          </select>
+        </div>
+        <canvas id="chart-canales-paises"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== GRUPOS ===================== -->
+  <section class="pantalla" id="tab-grupos">
+    <div class="caja">
+      <h2>¿Acepto este grupo? (desplazamiento)</h2>
+      <div class="fila-controles">
+        <label>Llegada</label><input type="date" id="grupo-llegada">
+        <label>Noches</label><input type="number" id="grupo-noches" value="2" min="1" max="30" style="width:70px;">
+        <label>Habitaciones</label><input type="number" id="grupo-hab" value="10" min="1" max="80" style="width:70px;">
+        <label>Precio neto por habitación y noche (€)</label><input type="number" id="grupo-precio" value="120" min="1" max="2000" style="width:90px;">
+      </div>
+      <div class="tarjetas" id="grupo-tarjetas"></div>
+      <div class="tabla-scroll"><table id="tabla-grupo">
+        <thead><tr><th>Noche</th><th class="n">Previsión individual</th><th class="n">Aforo</th><th class="n">Hab. que desplaza</th><th class="n">Precio medio esperado</th><th class="n">Ingreso desplazado</th><th>Evento</th></tr></thead>
+        <tbody></tbody></table></div>
+      <div class="nota" style="margin-top:8px;">El grupo desplaza las habitaciones que, según la previsión, se habrían vendido sueltas y ya no caben.
+        Precio medio esperado: el ADR de lo que ya está vendido para esa noche; si no hay, el del año anterior; si tampoco, el 85 % del BAR SA actual.
+        Es una estimación: no tiene en cuenta el gasto extra del grupo (desayunos, salas) ni que pueda cancelar.</div>
+    </div>
+  </section>
+
+  <!-- ===================== SEM ===================== -->
+  <section class="pantalla" id="tab-sem">
+    <div class="fila-controles">
+      <label>Periodo (por fecha de creación de la reserva)</label>
+      <select id="sem-rango-rapido">
+        <option value="hoy">Hoy</option>
+        <option value="ayer">Ayer</option>
+        <option value="mes" selected>Este mes</option>
+        <option value="mes_anterior">Mes anterior</option>
+        <option value="30">Últimos 30 días</option>
+        <option value="custom">Rango personalizado</option>
+      </select>
+      <label>Desde</label><input type="date" id="sem-desde">
+      <label>Hasta</label><input type="date" id="sem-hasta">
+    </div>
+    <div class="tarjetas" id="sem-tarjetas"></div>
+    <div class="dos-col">
+      <div class="caja">
+        <h2>Por campaña (Utm Campaign)</h2>
+        <div class="tabla-scroll"><table id="tabla-sem-campania">
+          <thead><tr><th>Campaña</th><th class="n">Reservas</th><th class="n">Importe</th><th class="n">Clics Ads</th><th class="n">Coste Ads</th><th class="n">Coste/reserva</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+        <div class="vacio" id="sem-campania-vacio" style="display:none;">Sin reservas con datos de campaña en este periodo.</div>
+        <div class="nota" style="margin-top:4px;">
+          Clics/Coste solo aparecen en las 4 campañas activas de Google Ads que podemos identificar con seguridad
+          (ES España, ES genérica, EN genérico, PMAX ES España) y solo hay datos desde el 05/07/2026. "Coste/reserva"
+          es el coste total de esa campaña en el periodo dividido entre las reservas de esa campaña — es un coste medio.
+        </div>
+      </div>
+      <div class="caja">
+        <h2>Por origen / soporte (Utm Source / Medium)</h2>
+        <div class="tabla-scroll"><table id="tabla-sem-origen">
+          <thead><tr><th>Origen / Soporte</th><th class="n">Reservas</th><th class="n">Importe</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+        <div class="vacio" id="sem-origen-vacio" style="display:none;">Sin reservas con datos de origen/soporte en este periodo.</div>
+      </div>
+    </div>
+    <div class="caja">
+      <h2>Rendimiento real de Google Ads por campaña (datos propios de Ads, sin cruzar con reservas)</h2>
+      <div class="tabla-scroll"><table id="tabla-sem-ads">
+        <thead><tr><th>Campaña (Ads)</th><th class="n">Impresiones</th><th class="n">Clics</th><th class="n">CTR</th><th class="n">CPC medio</th><th class="n">Coste</th><th class="n">Conversiones (Ads)</th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+      <div class="vacio" id="sem-ads-vacio" style="display:none;">Sin datos de Google Ads en este periodo (o no está configurado el Sheet de coste).</div>
+      <div class="nota" style="margin-top:4px;">
+        "Conversiones (Ads)" es lo que el propio Google Ads cuenta como conversión, no el número de reservas de GuestPro.
+      </div>
+    </div>
+    <div class="nota">
+      Atribución last-touch (la de la propia reserva, no la de la primera visita). Solo reservas activas
+      (no canceladas/no show/expiradas). Importe = importe total de la reserva (con extras).
+    </div>
+  </section>
+
+</main>
+
+<script>
+const JSON_FILES = ["kpi_diario.json","alertas.json","meta.json","resumen.json","evolucion.json","pickup_diario.json","nacionalidades.json",
+                    "sem.json","cambios_manuales.json","ads_costes.json","calendario.json","eventos.json","curvas.json","canales.json",
+                    "tarifas.json","decisiones.json","competencia.json"];
+const COLOR_CANAL = {Directo:"#5b8cff", GUESTPRO:"#30c9a4", BOOKING:"#f5a623", EXPEDIA:"#f25f5c", DAY:"#a06cd5", BYHOURS:"#4fb6e0", SLP:"#e06c9f", OTROS:"#92a0bf"};
+
+// Dos formas de abrir el panel:
+//  - "web": publicado en GitHub Pages. datos.json va cifrado (AES-256-GCM) y solo se abre con usuario y contraseña:
+//    la contraseña nunca sale del navegador. Los cambios de precio se dejan firmados en el repositorio privado de la cola.
+//  - "local": con "python -m http.server" en C:\SLEEPN\RMS\web. Lee los .json de la carpeta; no puede cambiar precios.
+if (window.top !== window.self) { document.documentElement.style.display = "none"; }   // nadie puede meter el panel en un marco
+let DATA = {};
+let MODO = "local";
+let SESION = null;           // {usuario, permiso, puede_cambiar_precios}
+const WEB = {acceso: null, clave: null, perfil: null, firma: null, uid: null, aviso: null};
+const API_GITHUB = "https://api.github.com";
+const ENC = new TextEncoder();
+const CLAVE_SESION = "sesion:" + location.pathname;
+
+function b64aBytes(b64){ const s = atob(String(b64).replace(/\s+/g, "")); const u = new Uint8Array(s.length); for(let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
+function deB64url(t){ t = String(t).replace(/-/g, "+").replace(/_/g, "/"); return b64aBytes(t + "===".slice((t.length + 3) % 4)); }
+function bytesAB64(u){ let s = ""; const b = new Uint8Array(u); for(let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); return btoa(s); }
+function bytesAB64url(u){ return bytesAB64(u).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
+async function idUsuario(u){ return bytesAB64url(await crypto.subtle.digest("SHA-256", ENC.encode("rms-usuario:" + u))).slice(0, 22); }
+async function abrirSobre(clave, sobre, aad){
+  return new Uint8Array(await crypto.subtle.decrypt({name: "AES-GCM", iv: b64aBytes(sobre.n), additionalData: ENC.encode(aad)}, clave, b64aBytes(sobre.c)));
+}
+async function gunzipJSON(bytes){
+  const flujo = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+  return JSON.parse(await new Response(flujo).text());
+}
+
+/* -- sesión recordada (IndexedDB). Se guarda la llave derivada de la contraseña como CryptoKey NO exportable: el
+      navegador la puede usar pero nadie puede leerla. Si falla (modo privado, etc.), simplemente no se recuerda. */
+function idb(){ return new Promise((res, rej) => { const r = indexedDB.open("rms_sleepn", 1); r.onupgradeneeded = () => r.result.createObjectStore("kv"); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+async function idbOp(modo, fn){ const db = await idb(); return new Promise((res, rej) => { const tx = db.transaction("kv", modo); const r = fn(tx.objectStore("kv")); tx.oncomplete = () => res(r && r.result); tx.onerror = () => rej(tx.error); }); }
+const idbGet = k => idbOp("readonly", s => s.get(k)).catch(() => null);
+const idbSet = (k, v) => idbOp("readwrite", s => s.put(v, k)).catch(() => null);
+const idbDel = k => idbOp("readwrite", s => s.delete(k)).catch(() => null);
+
+async function leerAcceso(){
+  const r = await fetch("acceso.json?t=" + Date.now(), {cache: "no-store"});
+  return r.ok ? r.json() : null;
+}
+
+// Con la llave del usuario: abre la clave de los datos y su perfil (permiso, token de la cola y clave de firma).
+async function abrirConLlave(uid, llave){
+  const e = WEB.acceso && WEB.acceso.usuarios && WEB.acceso.usuarios[uid];
+  if(!e) return false;
+  try{
+    const kid = WEB.acceso.kid;
+    const k = await abrirSobre(llave, e.k, `rms-k:${kid}:${uid}`);
+    WEB.clave = await crypto.subtle.importKey("raw", k, "AES-GCM", false, ["decrypt"]);
+    WEB.perfil = JSON.parse(new TextDecoder().decode(await abrirSobre(llave, e.perfil, `rms-perfil:${kid}:${uid}`)));
+    WEB.firma = WEB.perfil.firma ? await crypto.subtle.importKey("raw", deB64url(WEB.perfil.firma), {name: "HMAC", hash: "SHA-256"}, false, ["sign"]) : null;
+    WEB.uid = uid;
+    SESION = {usuario: WEB.perfil.usuario, permiso: WEB.perfil.permiso, puede_cambiar_precios: WEB.perfil.permiso === "precios" && !!WEB.perfil.token_cola};
+    return true;
+  }catch(err){ return false; }
+}
+
+async function llaveDeContrasena(clave, e){
+  const base = await crypto.subtle.importKey("raw", ENC.encode(clave), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({name: "PBKDF2", salt: deB64url(e.sal), iterations: e.iter, hash: "SHA-256"}, base,
+                                 {name: "AES-GCM", length: 256}, false, ["decrypt"]);
+}
+
+function pedirContrasena(){
+  return new Promise(resolve => {
+    const caja = document.getElementById("acceso"), form = document.getElementById("form-acceso");
+    const err = document.getElementById("acc-error"), btn = document.getElementById("acc-entrar");
+    caja.hidden = false;
+    document.getElementById("acc-usuario").focus();
+    form.onsubmit = async (ev) => {
+      ev.preventDefault();
+      const usuario = document.getElementById("acc-usuario").value.trim().toLowerCase();
+      const clave = document.getElementById("acc-clave").value;
+      if(!usuario || !clave){ err.textContent = "Escribe usuario y contraseña."; return; }
+      btn.disabled = true; btn.textContent = "Comprobando…"; err.textContent = "";
+      try{
+        const uid = await idUsuario(usuario);
+        const e = WEB.acceso.usuarios[uid];
+        const llave = e ? await llaveDeContrasena(clave, e) : null;
+        if(llave && await abrirConLlave(uid, llave)){
+          if(document.getElementById("acc-recordar").checked) await idbSet(CLAVE_SESION, {uid, llave, exp: Date.now() + 7 * 86400000});
+          caja.hidden = true; document.getElementById("acc-clave").value = "";
+          resolve();
+          return;
+        }
+        await new Promise(r => setTimeout(r, 500));
+        err.textContent = "Usuario o contraseña incorrectos.";
+        document.getElementById("acc-clave").select();
+      }catch(x){
+        err.textContent = "No se pudo comprobar el acceso en este navegador (" + (x && x.message || x) + ").";
+      }finally{ btn.disabled = false; btn.textContent = "Entrar"; }
+    };
+  });
+}
+
+async function asegurarSesion(){
+  const s = await idbGet(CLAVE_SESION);
+  if(s && s.exp > Date.now() && s.llave && await abrirConLlave(s.uid, s.llave)) return;
+  if(s) await idbDel(CLAVE_SESION);       // caducada, usuario dado de baja o contraseña cambiada
+  await pedirContrasena();
+}
+
+async function cargarPaqueteWeb(reintento){
+  const r = await fetch("datos.json?t=" + Date.now(), {cache: "no-store"});
+  if(!r.ok) return false;
+  const p = await r.json();
+  if(p.kid !== WEB.acceso.kid){             // se acaba de cambiar la clave (alta/baja de usuario): ficheros a medio publicar
+    if(reintento) return false;
+    await new Promise(res => setTimeout(res, 3000));
+    WEB.acceso = await leerAcceso();
+    const s = await idbGet(CLAVE_SESION);
+    if(!(s && await abrirConLlave(s.uid, s.llave))){ await idbDel(CLAVE_SESION); location.reload(); return false; }
+    return cargarPaqueteWeb(true);
+  }
+  const ficheros = await gunzipJSON(await abrirSobre(WEB.clave, p, `rms-datos:${p.kid}`));
+  JSON_FILES.forEach(f => DATA[f.replace(".json","")] = ficheros[f] ?? null);
+  return true;
+}
+
+/* -- cola de cambios de precio: repositorio privado de GitHub, con el token que solo tienen los usuarios de "precios" */
+function apiGithub(){ return (WEB.perfil && WEB.perfil.api) || API_GITHUB; }
+async function gh(metodo, ruta, cuerpo){
+  const h = {Authorization: "Bearer " + WEB.perfil.token_cola, Accept: "application/vnd.github+json"};
+  if(cuerpo) h["Content-Type"] = "application/json";
+  return fetch(apiGithub() + ruta, {method: metodo, headers: h, body: cuerpo ? JSON.stringify(cuerpo) : undefined, cache: "no-store"});
+}
+async function leerColaPendiente(){
+  if(MODO !== "web" || !WEB.perfil || !WEB.perfil.token_cola) return [];
+  try{
+    const r = await gh("GET", `/repos/${WEB.perfil.repo_cola}/contents/cola`);
+    if(!r.ok) return [];
+    const lista = (await r.json()).filter(x => x.type === "file" && /^web_\d+_[a-z0-9]+\.json$/.test(x.name)).slice(0, 30);
+    const out = [];
+    for(const x of lista){
+      const f = await gh("GET", `/repos/${WEB.perfil.repo_cola}/contents/cola/${x.name}`);
+      if(!f.ok) continue;
+      try{ out.push(JSON.parse(JSON.parse(new TextDecoder().decode(b64aBytes((await f.json()).content))).datos)); }catch(e){}
+    }
+    return out.sort((a, b) => String(a.creada).localeCompare(String(b.creada)));
+  }catch(e){ return []; }
+}
+
+async function detectarModo(){
+  try{
+    const a = await leerAcceso();
+    if(a && a.usuarios){ WEB.acceso = a; return "web"; }
+  }catch(e){}
+  return "local";
+}
+
+async function leerFichero(f){
+  const r = await fetch(f, {cache: "no-store"});
+  return r.ok ? r.json() : null;
+}
+
+async function cargarTodo(){
+  MODO = await detectarModo();
+  if(MODO === "web"){
+    await asegurarSesion();
+    if(!(await cargarPaqueteWeb())){
+      WEB.aviso = "No se han podido abrir los datos: si se acaba de dar de alta o de baja a alguien, GitHub tarda unos minutos en "
+                + "publicar la clave nueva. Vuelve a cargar la página en 5-10 minutos.";
+      console.error("No se pudieron leer los datos (datos.json)");
+    }
+    DATA.cola_pendiente = await leerColaPendiente();
+    return true;
+  }
+  const entradas = await Promise.all(JSON_FILES.map(f => leerFichero(f).catch(e => { console.error("No se pudo leer " + f, e); return null; })));
+  JSON_FILES.forEach((f,i) => DATA[f.replace(".json","")] = entradas[i]);
+  DATA.cola_pendiente = [];
+  return true;
+}
+
+async function salir(){
+  await idbDel(CLAVE_SESION);
+  location.reload();
+}
+
+/* ---------------- utilidades (fechas SIEMPRE en hora local: toISOString() pasa a UTC y en España adelanta un día) ---------------- */
+const pad = n => String(n).padStart(2,"0");
+function isoLocal(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function fechaDe(iso){ const [y,m,d] = iso.slice(0,10).split("-").map(Number); return new Date(y, m-1, d); }
+function sumarDias(iso, n){ const d = fechaDe(iso); d.setDate(d.getDate()+n); return isoLocal(d); }
+function primerDiaMes(iso, mesesAtras=0){ const d = fechaDe(iso); d.setDate(1); d.setMonth(d.getMonth()-mesesAtras); return isoLocal(d); }
+function ultimoDiaMes(iso){ const d = fechaDe(iso); d.setMonth(d.getMonth()+1, 0); return isoLocal(d); }
+// "Hoy" es la fecha real en Madrid (hora del hotel), no la del último ciclo: de madrugada resumen.hoy aún es ayer.
+function hoyISO(){
+  try {
+    const p = {};
+    new Intl.DateTimeFormat("en-GB", {timeZone: "Europe/Madrid", year: "numeric", month: "2-digit", day: "2-digit"})
+      .formatToParts(new Date()).forEach(x => { p[x.type] = x.value; });
+    if (p.year && p.month && p.day) return `${p.year}-${p.month}-${p.day}`;
+  } catch(e) {}
+  return isoLocal(new Date());
+}
+function diasEntre(a, b){ return Math.round((fechaDe(b) - fechaDe(a)) / 86400000); }
+function num(v, dec=0){ return (v === null || v === undefined || isNaN(v)) ? "—" : (+v).toLocaleString("es-ES",{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
+function fechaEU(iso){ return (!iso || typeof iso !== "string" || iso.length < 10) ? (iso || "—") : `${iso.slice(8,10)}/${iso.slice(5,7)}/${iso.slice(0,4)}`; }
+function fechaCorta(iso){ return `${iso.slice(8,10)}/${iso.slice(5,7)}`; }
+function fechaHoraEU(iso){ return (!iso || typeof iso !== "string" || iso.length < 16) ? fechaEU(iso) : `${fechaEU(iso.slice(0,10))} ${iso.slice(11,16)}`; }
+function eur(v, dec=0){ return (v===null||v===undefined||isNaN(v)) ? "—" : (+v).toLocaleString("es-ES",{style:"currency",currency:"EUR",minimumFractionDigits:dec,maximumFractionDigits:dec}); }
+function pct(v, dec=0){ return (v===null||v===undefined||isNaN(v)) ? "—" : (v*100).toLocaleString("es-ES",{maximumFractionDigits:dec}) + " %"; }
+function signo(v, dec=0){ return (v===null||v===undefined||isNaN(v)) ? "—" : (v>0?"+":"") + (+v).toLocaleString("es-ES",{maximumFractionDigits:dec}); }
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function enlace(url, texto){ return (url && /^https?:\/\//.test(url)) ? `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(texto || "fuente")}</a>` : ""; }
+const DIAS = ["dom","lun","mar","mié","jue","vie","sáb"];
+function diaSemana(iso){ return DIAS[fechaDe(iso).getDay()]; }
+function chipEvento(e){ return `<span class="pill imp${e.impacto||1}" title="${esc(e.categoria||"")}">${esc(e.nombre)}</span>`; }
+const CH = {};
+function grafico(id, cfg){ if(CH[id]) CH[id].destroy(); CH[id] = new Chart(document.getElementById(id), cfg); return CH[id]; }
+function calPorFecha(){ return Object.fromEntries(((DATA.calendario||{}).filas||[]).map(f => [f.fecha, f])); }
+
+/* ---------------- cambiar precio (cola firmada en GitHub; el permiso lo da el usuario) ---------------- */
+function limites(){
+  const r = DATA.resumen || {};
+  return {min: +(r.precio_min ?? 98), max: +(r.precio_max ?? 888), techo: +(r.ind_techo ?? 138), ind: r.escribir_ind_sa !== false};
+}
+function motivoSinPermiso(){
+  if(MODO !== "web") return "Los cambios de precio solo se envían desde el panel publicado (con usuario y contraseña).";
+  if(!SESION || SESION.permiso !== "precios") return `Tu usuario (${SESION ? SESION.usuario : "?"}) es de solo consulta: puede ver el panel pero no cambiar precios.`;
+  if(!SESION.puede_cambiar_precios) return "Falta configurar en el PC el token de la cola de precios (GITHUB_TOKEN_COLA_WEB): de momento no se pueden pedir cambios desde aquí.";
+  return null;
+}
+/* ---- competencia (Informe de revenue de GuestPro: precios de Booking) ---- */
+function compPorFecha(fecha){ return (((DATA.competencia || {}).fechas) || {})[fecha] || null; }
+function compLinea(r){
+  if(!r || !r.n) return "";
+  const pos = r.pos ? `nosotros ${r.pos}.º de ${r.n}${r.dif_pct != null ? ` (${signo(r.dif_pct)} % vs media)` : ""}` : "no aparecemos";
+  return `media ${eur(r.media)} · ${pos}`;
+}
+function compTabla(r){
+  if(!r || !r.n) return `<div class="nota">Sin precios de competencia para esta noche.</div>`;
+  const C = DATA.competencia || {};
+  return `<div class="tabla-scroll"><table class="comp-tabla"><tbody>${r.hoteles.map(h => `<tr class="${h.yo ? "yo" : ""}">
+      <td class="p">${eur(h.p, h.p % 1 ? 2 : 0)}</td><td class="nt">${h.nota != null ? num(h.nota, 1) : ""}</td>
+      <td>${esc(h.hotel)}${h.g ? '<span class="comp-g" title="Descuento Genius de Booking">G</span>' : ""}${h.m ? '<span class="comp-m" title="Precio para móvil de Booking">M</span>' : ""}
+        <div class="hab">${esc(h.hab)}</div></td></tr>`).join("")}</tbody></table></div>
+    <div class="nota" style="margin-top:6px;">${r.pos ? "" : "<strong>No aparecemos</strong> esta noche (normalmente porque estamos completos o cerrados en Booking). "}
+      Media de los otros ${eur(r.media)} · mediana ${eur(r.mediana)} · de ${eur(r.min)} a ${eur(r.max)}.
+      Precios de Booking que recoge GuestPro${C.leido ? `, leídos ${fechaHoraEU(C.leido)}` : ""}${C.bob_date ? ` (foto del ${fechaEU(C.bob_date)})` : ""}.
+      Cada hotel con su habitación más barata: puede ser NR o FLEX, individual o doble. G = descuento Genius, M = precio móvil;
+      si nuestra fila lleva G, es BAR SA con el descuento Genius (un 10 % menos).</div>`;
+}
+function precioActual(fecha){ const t = (DATA.tarifas||{})[fecha]; return t ? {bar:t.bar_sa, ind:t.ind_sa, leido:t.leido} : {bar:null, ind:null, leido:null}; }
+function indAuto(fecha, barNuevo){
+  const a = precioActual(fecha), L = limites();
+  if(!a.bar || !a.ind || !barNuevo) return null;
+  return Math.max(L.min, Math.min(L.techo, Math.round(a.ind * barNuevo / a.bar)));
+}
+
+function renderControlPrecio(contId, fechaDefecto, origenPantalla, precioSugerido){
+  const cont = document.getElementById(contId);
+  if(!cont) return;
+  const L = limites();
+  const id = k => `${contId}-${k}`;
+  cont.innerHTML = `
+    <div class="control-precio">
+      <h3>Cambiar precio en GuestPro</h3>
+      <div class="actual" id="${id("actual")}"></div>
+      <div class="fila">
+        <label>Fecha</label>
+        <input type="date" id="${id("fecha")}" value="${fechaDefecto || hoyISO()}">
+        <label>BAR SA</label>
+        <div class="stepper">
+          <button type="button" data-paso="-10">-10</button>
+          <button type="button" data-paso="-5">-5</button>
+          <input type="number" id="${id("precio")}" min="${L.min}" max="${L.max}" step="1">
+          <button type="button" data-paso="5">+5</button>
+          <button type="button" data-paso="10">+10</button>
+        </div>
+        ${L.ind ? `<label>IND SA</label><input type="number" class="ind" id="${id("ind")}" min="${L.min}" max="${L.max}" step="1" placeholder="auto">` : ""}
+        <input type="text" class="nota-in" id="${id("nota")}" placeholder="Nota (opcional)" maxlength="300">
+        <button type="button" class="btn" id="${id("btn")}">Aplicar cambio</button>
+      </div>
+      <div class="estado-cola espera" id="${id("estado")}">Se aplica en el PMS en el próximo ciclo automático (máx. 30 min). Límites de Config: ${eur(L.min)} – ${eur(L.max)}.</div>
+    </div>`;
+  const fechaEl = document.getElementById(id("fecha")), precioEl = document.getElementById(id("precio")), indEl = document.getElementById(id("ind"));
+  const refrescar = (rellenar) => {
+    const f = fechaEl.value, a = precioActual(f), c = calPorFecha()[f];
+    const compAbierto = !!(cont.querySelector(".comp-resumen") || {}).open;
+    if(rellenar) precioEl.value = (precioSugerido && f === fechaDefecto) ? precioSugerido : (a.bar ? Math.round(a.bar) : "");
+    const auto = indAuto(f, +precioEl.value);
+    if(indEl) indEl.placeholder = auto ? `auto ${auto}` : "auto";
+    document.getElementById(id("actual")).innerHTML = a.bar
+      ? `Precio actual del ${fechaEU(f)}: <strong>BAR SA ${eur(a.bar)}</strong>${a.ind ? ` · IND SA ${eur(a.ind)}` : ""} <span style="opacity:.7">(leído ${fechaHoraEU(a.leido)})</span>`
+        + (c && c.recomendado ? ` · recomendado <strong>${eur(c.recomendado)}</strong>` : "")
+        + (indEl ? `<br>IND SA vacío = se mueve en proporción a BAR SA con techo ${eur(L.techo)}${auto ? ` (quedaría en ${eur(auto)})` : ""}.` : "")
+      : `Todavía no se ha leído el precio actual de esta fecha (la lectura de tarifas se hace una vez al día).`
+        + (indEl ? ` IND SA vacío = se mueve en proporción a BAR SA con techo ${eur(L.techo)}.` : "");
+    const rc = compPorFecha(f);
+    if(rc && rc.n){
+      document.getElementById(id("actual")).insertAdjacentHTML("beforeend",
+        `<details class="comp-resumen"${compAbierto ? " open" : ""}><summary>Competencia: ${compLinea(rc)}</summary>${compTabla(rc)}</details>`);
+    }
+  };
+  fechaEl.addEventListener("change", () => refrescar(true));
+  precioEl.addEventListener("input", () => refrescar(false));
+  cont.querySelectorAll(".stepper button").forEach(b => b.addEventListener("click", () => {
+    precioEl.value = Math.max(1, Math.min(9999, (+precioEl.value || 0) + (+b.dataset.paso)));
+    refrescar(false);
+  }));
+  document.getElementById(id("btn")).addEventListener("click", () => enviarCambioPrecio(contId, origenPantalla));
+  refrescar(true);
+  const sinPermiso = motivoSinPermiso();
+  if(sinPermiso){
+    document.getElementById(id("btn")).disabled = true;
+    const est = document.getElementById(id("estado"));
+    est.className = "estado-cola aviso";
+    est.textContent = sinPermiso;
+  }
+}
+
+async function enviarCambioPrecio(contId, origenPantalla){
+  const id = k => `${contId}-${k}`;
+  const estadoEl = document.getElementById(id("estado"));
+  const fecha = document.getElementById(id("fecha")).value;
+  const precio = +document.getElementById(id("precio")).value;
+  const indEl = document.getElementById(id("ind"));
+  const precioInd = indEl && indEl.value !== "" ? +indEl.value : null;
+  const nota = document.getElementById(id("nota")).value;
+  const L = limites(), a = precioActual(fecha);
+  const btn = document.getElementById(id("btn"));
+  const sinPermiso = motivoSinPermiso();
+  if(sinPermiso){ estadoEl.className = "estado-cola error"; estadoEl.textContent = sinPermiso; return; }
+  if(!fecha || fecha < hoyISO()){ estadoEl.className = "estado-cola error"; estadoEl.textContent = "Elige una fecha de hoy en adelante."; return; }
+  for(const [nombre, v] of [["BAR SA", precio], ["IND SA", precioInd]]){
+    if(v === null) continue;
+    if(!v || v < L.min || v > L.max){
+      estadoEl.className = "estado-cola error";
+      estadoEl.textContent = `${nombre}: el precio debe estar entre ${eur(L.min)} y ${eur(L.max)} (límites de Config).`;
+      return;
+    }
+  }
+  if(a.bar && Math.abs(precio / a.bar - 1) > 0.3 && btn.dataset.confirmado !== `${fecha}|${precio}`){
+    btn.dataset.confirmado = `${fecha}|${precio}`;
+    estadoEl.className = "estado-cola aviso";
+    estadoEl.textContent = `Cambio grande: de ${eur(a.bar)} a ${eur(precio)} (${signo((precio/a.bar-1)*100)} %). Pulsa "Aplicar cambio" otra vez para confirmarlo.`;
+    return;
+  }
+  btn.disabled = true;
+  estadoEl.className = "estado-cola espera";
+  estadoEl.textContent = "Enviando...";
+  try{
+    const hex = Array.from(crypto.getRandomValues(new Uint8Array(5)), b => b.toString(16).padStart(2, "0")).join("");
+    const entrada = {id: `web_${Date.now()}_${hex}`, fecha, precio, precio_ind: precioInd, origen_pantalla: origenPantalla, nota,
+                     objetivo: "bar_sa_e_ind_sa", usuario: SESION.usuario, creada: new Date().toISOString()};
+    const datos = JSON.stringify(entrada);
+    const firma = bytesAB64url(await crypto.subtle.sign("HMAC", WEB.firma, ENC.encode(datos)));
+    const contenido = bytesAB64(ENC.encode(JSON.stringify({datos, firma})));
+    let r = null;
+    for(let intento = 0; intento < 3; intento++){        // 409/422: otro cambio a la vez en el repositorio; se reintenta
+      r = await gh("PUT", `/repos/${WEB.perfil.repo_cola}/contents/cola/${entrada.id}.json`,
+                   {message: `Panel: ${fecha} -> ${precio} € (${SESION.usuario})`, content: contenido});
+      if(r.status !== 409 && r.status !== 422) break;
+      await new Promise(res => setTimeout(res, 1200 * (intento + 1)));
+    }
+    if(!r.ok){
+      const motivos = {401: "el token de la cola no es válido o ha caducado (GITHUB_TOKEN_COLA_WEB del PC).",
+                       403: "el token de la cola no tiene permiso de escritura en el repositorio de la cola.",
+                       404: "el token de la cola no ve el repositorio de la cola (repo_cola o permisos del token)."};
+      estadoEl.className = "estado-cola error";
+      estadoEl.textContent = "No se ha podido dejar en la cola: " + (motivos[r.status] || ("GitHub respondió " + r.status + ".")) + " Nada se ha escrito en el PMS.";
+      return;
+    }
+    btn.dataset.confirmado = "";
+    estadoEl.className = "estado-cola ok";
+    estadoEl.textContent = `En cola — ${fechaEU(fecha)}: BAR SA ${eur(precio)}${precioInd!==null ? `, IND SA ${eur(precioInd)}` : (L.ind ? ", IND SA en proporción" : "")}. `
+      + `Se escribirá en GuestPro en el próximo ciclo (máx. 30 min); el resultado sale en "Decisiones de precio recientes".`;
+    DATA.cola_pendiente = await leerColaPendiente();
+    try{ pintarDecisiones(); }catch(e){}
+  }catch(e){
+    estadoEl.className = "estado-cola error";
+    estadoEl.textContent = "No se pudo contactar con GitHub (revisa tu conexión). Nada se ha escrito en el PMS.";
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+/* ---------------- navegación ---------------- */
+document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => irA(b.dataset.tab)));
+function irA(tab){
+  document.querySelectorAll("nav button").forEach(x => x.classList.toggle("activo", x.dataset.tab === tab));
+  document.querySelectorAll(".pantalla").forEach(x => x.classList.toggle("activa", x.id === "tab-" + tab));
+  window.scrollTo(0, 0);
+}
+
+// La barra de pestañas se pega justo debajo de la cabecera, mida lo que mida (en el móvil la cabecera puede ocupar 2 líneas).
+function ajustarNav(){
+  const h = document.querySelector("header"), n = document.querySelector("nav");
+  if(h && n) n.style.top = h.offsetHeight + "px";
+}
+window.addEventListener("resize", ajustarNav);
+
+function pintarCabecera(){
+  const m = DATA.meta || {};
+  document.getElementById("titulo-hotel").textContent = "RMS " + (m.hotel || "SLEEP'N Atocha");
+  document.getElementById("meta-actualizado").textContent = m.actualizado ? ("Actualizado: " + fechaHoraEU(m.actualizado)) : "Sin datos de actualización";
+  const us = document.getElementById("usuario-sesion");
+  if(MODO === "web" && SESION){
+    us.innerHTML = `<span>${esc(SESION.usuario)}${SESION.permiso === "precios" ? "" : " (consulta)"}</span><button type="button" class="btn-sec" id="btn-salir">Salir</button>`;
+    document.getElementById("btn-salir").addEventListener("click", salir);
+  } else us.innerHTML = "";
+  ajustarNav();
+  // Aviso de datos viejos: (1) el RMS dice que las reservas no se descargan; (2) el propio panel lleva horas sin actualizarse.
+  const avisos = [];
+  let grave = false;
+  const fr = (DATA.calendario || {}).frescura || (DATA.resumen || {}).frescura;
+  if (WEB.aviso) { avisos.push(`<strong>Sin datos.</strong> ${esc(WEB.aviso)}`); grave = true; }
+  if (fr && fr.ok === false) { avisos.push(`<strong>Recomendaciones suspendidas.</strong> ${esc(fr.aviso)}`); grave = true; }
+  const ahora = ahoraMadrid();
+  if (m.actualizado && ahora) {
+    const min = (fechaHoraDe(ahora) - fechaHoraDe(m.actualizado.slice(0,16))) / 60000;
+    const hora = +ahora.slice(11,13) + (+ahora.slice(14,16))/60;
+    const enHorario = hora >= 10.75 && hora <= 22.75;          // el actualizador corre de 10:00 a 22:00 cada 30 min
+    if ((enHorario && min > 120) || min > 15 * 60) {
+      avisos.push(`<strong>El panel no se actualiza desde ${fechaHoraEU(m.actualizado)}.</strong> Revisa que el PC de recepción esté encendido y el
+        actualizador funcionando (rms_actualizador.log). Los datos y recomendaciones de abajo son de esa hora.`);
+      grave = true;
+    }
+  }
+  if (fr && fr.ok !== false && fr.precios_viejos) {
+    avisos.push(`<strong>Precios actuales sin leer.</strong> En ${num(fr.precios_viejos)} fecha(s) el precio de GuestPro se leyó hace más de 3 días;
+      ahí se indica subir/bajar pero sin cifra hasta que vuelva la lectura diaria de tarifas.`);
+  }
+  const caja = document.getElementById("aviso-datos");
+  caja.innerHTML = avisos.join("<br>");
+  caja.className = "aviso-global" + (grave ? "" : " leve");
+  caja.style.display = avisos.length ? "block" : "none";
+}
+function ahoraMadrid(){
+  try {
+    const p = {};
+    new Intl.DateTimeFormat("en-GB", {timeZone: "Europe/Madrid", year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", hourCycle: "h23"}).formatToParts(new Date()).forEach(x => { p[x.type] = x.value; });
+    if (p.year && p.hour) return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
+  } catch(e) {}
+  return null;
+}
+function fechaHoraDe(iso){ // "YYYY-MM-DDTHH:MM" como hora local (las dos que se comparan están en hora de Madrid)
+  const [f, h] = iso.split("T");
+  const [y, mo, d] = f.split("-").map(Number);
+  const [hh, mm] = (h || "00:00").split(":").map(Number);
+  return new Date(y, mo - 1, d, hh, mm);
+}
+
+/* ---------------- RESUMEN ---------------- */
+// Decisiones de precio: arriba lo que está en cola esperando al PC; debajo lo ya aplicado (o fallido) y quién lo pidió.
+function horaMadrid(isoUtc){
+  try{ return new Date(isoUtc).toLocaleString("es-ES", {timeZone:"Europe/Madrid", day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit"}); }
+  catch(e){ return isoUtc || "—"; }
+}
+function pintarDecisiones(){
+  const cola = (DATA.cola_pendiente||[]).map(e => `
+    <div class="fila-cambio">
+      <div><strong>${fechaEU(e.fecha)}</strong> → <strong>${eur(e.precio)}</strong>${e.precio_ind!=null ? ` · IND SA ${eur(e.precio_ind)}` : ""}
+        <span style="color:var(--muted)">· Panel (${esc(e.origen_pantalla || "?")}) · ${esc(e.usuario || "")}</span>
+        ${e.nota ? `<div style="color:var(--muted)">${esc(e.nota)}</div>` : ""}</div>
+      <div><span class="pill imp2">En cola</span><div style="color:var(--muted);font-size:11px;">pedido ${horaMadrid(e.creada)}</div></div>
+    </div>`).join("");
+  const dec = (DATA.decisiones||[]).slice(0, 12);
+  const hechas = dec.map(d => `
+    <div class="fila-cambio">
+      <div><strong>${fechaEU(d.fecha)}</strong> ${d.antes!=null ? eur(d.antes)+" → " : ""}<strong>${eur(d.despues)}</strong>
+        <span style="color:var(--muted)">· ${esc(d.origen)}</span>
+        ${d.cartera_entonces!=null ? `<div style="color:var(--muted)">Vendidas entonces ${d.cartera_entonces}${d.cartera_7d_despues!=null ? `, 7 días después ${d.cartera_7d_despues} (${signo(d.cartera_7d_despues-d.cartera_entonces)})` : ""}</div>` : ""}
+        ${d.error ? `<div class="badge-fallo">${esc(d.error).slice(0,140)}</div>` : ""}${d.nota ? `<div style="color:var(--muted)">${esc(d.nota)}</div>` : ""}</div>
+      <div>${d.aplicado ? '<span class="badge-confirmado">Aplicado</span>' : '<span class="badge-fallo">No aplicado</span>'}
+        <div style="color:var(--muted);font-size:11px;">${fechaHoraEU(d.cuando)}</div></div>
+    </div>`).join("");
+  document.getElementById("lista-decisiones").innerHTML = (cola + hechas) || `<div class="vacio">Todavía no hay cambios de precio registrados.</div>`;
+}
+
+function pintarResumen(){
+  const r = DATA.resumen || {};
+  const k = r.kpi_hoy || {};
+  const cal = (DATA.calendario||{}).filas || [];
+  const cambios = cal.filter(f => f.accion !== "mantener");
+  const urg = cambios.filter(f => f.L <= 30).length;
+  const prot = Object.keys(r.protegidas || {}).length;
+  const nuevos = ((DATA.eventos||{}).eventos||[]).filter(esNuevo).length;
+  const deltaOcup = (k.ocupacion!=null && k.ly_ocupadas!=null && k.disponibles) ? (k.ocupacion - (k.ly_ocupadas/k.disponibles)) : null;
+  const tarjetas = [
+    {etq:"Ocupación hoy", val: pct(k.ocupacion, 1), delta: deltaOcup!=null ? (signo(deltaOcup*100,1)+" pts vs año anterior") : null},
+    {etq:"ADR hoy", val: eur(k.adr), delta: (k.ly_adr!=null && k.adr!=null) ? (signo(k.adr-k.ly_adr)+" € vs año anterior") : null},
+    {etq:"Recomendaciones de precio", val: num(cambios.length), delta: `${urg} a 30 días o menos`, ir:"calendario"},
+    {etq:"Eventos nuevos (7 días)", val: num(nuevos), delta: "ver pestaña Eventos", ir:"eventos"},
+    {etq:"Fechas protegidas por la regla", val: num(prot), delta: r.regla_alza_precio ? ("a "+eur(r.regla_alza_precio)+" — revisar") : null, ir:"calendario"},
+    {etq:"Regla de subida", val: esc(r.regla_alza_activa || "—"), delta: null},
+  ];
+  document.getElementById("tarjetas-resumen").innerHTML = tarjetas.map(t => `
+    <div class="tarjeta" ${t.ir ? `style="cursor:pointer" onclick="irA('${t.ir}')"` : ""}>
+      <div class="etiqueta">${t.etq}</div><div class="valor">${t.val}</div>${t.delta ? `<div class="delta">${t.delta}</div>` : ""}
+    </div>`).join("");
+
+  const hoy = hoyISO();
+  const filas = (DATA.kpi_diario||[]).filter(f => f.fecha >= hoy && f.fecha <= sumarDias(hoy,30) && f.ocupacion != null);
+  if(!filas.length){
+    document.getElementById("chart-resumen-ocup").insertAdjacentHTML("afterend", `<div class="vacio">Sin datos de ocupación futura todavía (llegan con la descarga de Ocupación).</div>`);
+    document.getElementById("chart-resumen-ocup").style.display = "none";
+  } else grafico("chart-resumen-ocup", {type:"line",
+    data:{labels: filas.map(f=>fechaCorta(f.fecha)), datasets:[{label:"Ocupación", data: filas.map(f=>f.ocupacion!=null?+(f.ocupacion*100).toFixed(1):null),
+          borderColor:"#5b8cff", backgroundColor:"#5b8cff33", fill:true, tension:.25}]},
+    options:{responsive:true, scales:{y:{suggestedMax:100, ticks:{callback:v=>v+"%"}}}, plugins:{legend:{display:false}}}});
+
+  const prox = cal.filter(f => f.L <= 30 && (f.impacto||0) >= 2);
+  document.getElementById("lista-eventos-proximos").innerHTML = prox.length ? prox.map(f => `
+    <div class="fila-cambio"><div><strong>${diaSemana(f.fecha)} ${fechaCorta(f.fecha)}</strong> ${f.eventos.slice(0,3).map(chipEvento).join("")}</div>
+      <div class="n">${f.recomendado ? `<span class="${f.accion==='subir'?'sube':f.accion==='bajar'?'baja':'igual'}">${eur(f.recomendado)}</span>` : ""}</div></div>`).join("")
+    : `<div class="vacio">Sin eventos de impacto medio o alto en los próximos 30 días.</div>`;
+
+  pintarDecisiones();
+
+  const al = (r.alertas_recientes||[]).slice().reverse();
+  document.getElementById("lista-alertas").innerHTML = al.length ? al.map(a => {
+    const hist = (a.envio||"").startsWith("histórico");
+    const badge = hist ? `<span class="pill">histórico, sin aviso</span>`
+      : (a.envio === "enviado" ? `<span class="pill badge-confirmado">aviso enviado</span>` : `<span class="pill badge-fallo">${esc(a.envio || "pendiente")}</span>`);
+    return `<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;">
+      <strong>${fechaEU(a.fecha)}</strong> — ${a.n} reservas, sube a ${eur(a.precio_nuevo)}${a.precio_anterior!=null ? ` (antes ${eur(a.precio_anterior)})` : ""} ${badge}
+      <div style="color:var(--muted);font-size:12px;">Disparo: ${fechaHoraEU(a.cuando)}${hist ? "" : ` · Destino: ${esc(a.destino || "—")}`}</div></div>`;
+  }).join("") : `<div class="vacio">Sin alertas todavía.</div>`;
+
+  renderControlPrecio("control-precio-resumen", hoy, "resumen");
+}
+
+/* ---------------- COMPETENCIA (todas las tarifas) ---------------- */
+function nombreCorto(h){
+  const c = String(h).replace(/\s*-\s*B Corp Certified/i, "").replace(/\b(Madrid|Centro|Hotel|HOTEL)\b/g, "").replace(/\s+/g, " ").trim();
+  return c || h;
+}
+function filasCompetencia(){
+  const C = DATA.competencia || {};
+  const dias = +document.getElementById("comp-rango").value, finde = document.getElementById("comp-solo-finde").checked;
+  const hoy = hoyISO(), hasta = sumarDias(hoy, dias);
+  const fechas = Object.keys(C.fechas || {}).filter(f => f >= hoy && f < hasta && C.fechas[f].n
+                                                    && (!finde || [5, 6].includes(fechaDe(f).getDay())));
+  // columnas: hoteles ordenados de más barato a más caro (mediana en el rango elegido)
+  const precios = {};
+  fechas.forEach(f => C.fechas[f].hoteles.forEach(h => { if(!h.yo) (precios[h.hotel] = precios[h.hotel] || []).push(h.p); }));
+  const mediana = a => { const b = [...a].sort((x, y) => x - y), m = b.length >> 1; return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; };
+  const hoteles = Object.keys(precios).sort((a, b) => mediana(precios[a]) - mediana(precios[b]));
+  return {C, fechas, hoteles};
+}
+function pintarCompetencia(){
+  const {C, fechas, hoteles} = filasCompetencia();
+  const cal = calPorFecha();
+  document.getElementById("comp-estado").innerHTML = C.leido
+    ? `Precios de Booking que recoge GuestPro, leídos ${fechaHoraEU(C.leido)}${C.bob_date ? ` (foto del ${fechaEU(C.bob_date)})` : ""} · ${num(fechas.length)} noches en el rango · hasta ${fechaEU(C.hasta)}.`
+    : "";
+  document.getElementById("comp-vacio").style.display = fechas.length ? "none" : "block";
+  document.querySelector("#tabla-comp thead").innerHTML = fechas.length ? `<tr><th>Noche</th><th class="n">Ocup.</th><th class="n">BAR SA</th>
+    <th class="n yo">Nosotros</th><th class="n">Puesto</th><th class="n">Media otros</th>
+    ${hoteles.map(h => `<th class="n" title="${esc(h)}">${esc(nombreCorto(h))}</th>`).join("")}</tr>` : "";
+  document.querySelector("#tabla-comp tbody").innerHTML = fechas.map(f => {
+    const r = C.fechas[f], yo = r.hoteles.find(h => h.yo), c = cal[f], a = precioActual(f);
+    const occ = c ? (c.otb != null ? c.otb : c.cartera) / (c.cap || 80) : null;
+    const minimo = Math.min(...r.hoteles.map(h => h.p));
+    const marca = h => [h.cond, h.g ? "G" : "", h.m ? "M" : ""].filter(Boolean).join(" · ");
+    const celdas = hoteles.map(nombre => {
+      const h = r.hoteles.find(x => !x.yo && x.hotel === nombre);
+      if(!h) return `<td class="n">—</td>`;
+      const cls = [yo ? (h.p < yo.p ? "mas-barato" : h.p > yo.p ? "mas-caro" : "") : "", h.p === minimo ? "minimo" : ""].join(" ");
+      return `<td class="n ${cls}" title="${esc(h.hotel)} · ${esc(h.hab)}"><span class="cp">${eur(h.p, h.p % 1 ? 2 : 0)}</span><div class="nota">${marca(h)}</div></td>`;
+    }).join("");
+    return `<tr data-comp="${f}">
+      <td><strong>${diaSemana(f)} ${fechaCorta(f)}</strong><div class="nota">${(d => d === 0 ? "hoy" : d === 1 ? "mañana" : "a " + d + " d")(diasEntre(hoyISO(), f))}</div></td>
+      <td class="n">${occ != null ? pct(occ) : "—"}</td>
+      <td class="n">${a.bar ? eur(a.bar) : "—"}</td>
+      <td class="n yo ${yo && yo.p === minimo ? "minimo" : ""}">${yo ? `<span class="cp">${eur(yo.p, yo.p % 1 ? 2 : 0)}</span><div class="nota">${marca(yo)}</div>` : `<span class="nota">no aparecemos</span>`}</td>
+      <td class="n">${r.pos ? `${r.pos}.º de ${r.n}` : "—"}</td>
+      <td class="n">${eur(r.media)}${r.dif_pct != null ? `<div class="nota">nosotros ${signo(r.dif_pct)} %</div>` : ""}</td>
+      ${celdas}</tr>`;
+  }).join("");
+  document.querySelectorAll("#tabla-comp tbody tr[data-comp]").forEach(tr => tr.addEventListener("click", () => {
+    const sig = tr.nextElementSibling;
+    if(sig && sig.classList.contains("comp-detalle")){ sig.remove(); return; }
+    const d = document.createElement("tr");
+    d.className = "comp-detalle";
+    d.innerHTML = `<td colspan="${tr.children.length}">${compTabla(C.fechas[tr.dataset.comp])}</td>`;
+    tr.after(d);
+  }));
+}
+function descargarCsvCompetencia(){
+  const {C, fechas, hoteles} = filasCompetencia();
+  if(!fechas.length) return;
+  const n = v => v == null ? "" : String(v).replace(".", ",");
+  const q = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const cab = ["Noche", "BAR SA", "Nosotros (Booking)", "Nuestra habitación", "Puesto", "Hoteles", "Media otros", "Mediana otros"]
+    .concat(...hoteles.map(h => [h, h + " - habitación"]));
+  const filas = fechas.map(f => {
+    const r = C.fechas[f], yo = r.hoteles.find(h => h.yo);
+    return [f, n(precioActual(f).bar), n(yo && yo.p), yo ? yo.hab : "", r.pos || "", r.n, n(r.media), n(r.mediana)]
+      .concat(...hoteles.map(nombre => { const h = r.hoteles.find(x => !x.yo && x.hotel === nombre); return h ? [n(h.p), h.hab + (h.g ? " (Genius)" : "") + (h.m ? " (móvil)" : "")] : ["", ""]; }));
+  });
+  const csv = "\ufeff" + [cab, ...filas].map(l => l.map(q).join(";")).join("\r\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], {type: "text/csv;charset=utf-8"}));
+  a.download = `competencia_${hoyISO()}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+["comp-rango", "comp-solo-finde"].forEach(id => document.getElementById(id).addEventListener("change", pintarCompetencia));
+document.getElementById("comp-csv").addEventListener("click", descargarCsvCompetencia);
+
+/* ---------------- CALENDARIO ---------------- */
+function pintarCalendario(){
+  const C = DATA.calendario || {};
+  const filasAll = C.filas || [];
+  const dias = +document.getElementById("cal-rango").value;
+  const soloCambios = document.getElementById("cal-solo-cambios").checked;
+  const soloEventos = document.getElementById("cal-solo-eventos").checked;
+  const hoy = hoyISO(), hasta = sumarDias(hoy, dias);
+  const filas = filasAll.filter(f => f.fecha >= hoy && f.fecha <= hasta && (!soloCambios || f.accion !== "mantener") && (!soloEventos || (f.impacto||0) >= 2));
+  document.getElementById("cal-estado").innerHTML = filasAll.length
+    ? `Calendario generado ${fechaHoraEU(C.generado)} · precios actuales leídos ${C.tarifas_leidas ? fechaHoraEU(C.tarifas_leidas) : "todavía no (se leen una vez al día)"} · `
+      + `${filasAll.filter(f => f.accion !== "mantener" && f.fecha >= hoy && f.fecha <= hasta).length} fechas con recomendación de cambio en el rango. `
+      + `<strong>Nada se aplica solo</strong>: pulsa "Usar" en una fila para llevar el precio recomendado al formulario.`
+    : "Todavía no hay calendario: se genera en el próximo ciclo del actualizador.";
+  document.getElementById("cal-vacio").style.display = filas.length ? "none" : "block";
+  document.querySelector("#tabla-calendario tbody").innerHTML = filas.map(f => {
+    const cap = f.cap || 80;
+    const otb = f.otb != null ? f.otb : f.cartera;
+    const occ = otb / cap;
+    const ev = (f.eventos||[]);
+    const pk = f.pickup7, tip = f.pickup7_tipico;
+    const recTxt = f.suspendida ? `<span class="igual">Suspendida</span>` : f.recomendado
+      ? `<span class="${f.accion==='subir'?'sube':f.accion==='bajar'?'baja':'igual'}">${eur(f.recomendado)}</span>${f.bar ? ` <span class="nota">(${signo((f.recomendado/f.bar-1)*100)} %)</span>` : ""}`
+      : (f.pasos ? `<span class="${f.pasos>0?'sube':'baja'}">${f.pasos>0?'Subir':'Bajar'} ${Math.abs(f.pasos)} escalón${Math.abs(f.pasos)>1?'es':''}</span>` : `<span class="igual">Mantener</span>`);
+    const sug = [f.proteccion ? `<span class="pill imp3">Protegida por la regla</span>` : "", f.estancia ? `<span class="pill">${esc(f.estancia)}</span>` : "",
+                 f.aviso_tipo ? `<span class="pill imp2">${esc(f.aviso_tipo)}</span>` : ""].join("");
+    return `<tr>
+      <td><strong>${diaSemana(f.fecha)} ${fechaCorta(f.fecha)}</strong><div class="nota">${(d => d === 0 ? "hoy" : d === 1 ? "mañana" : "a " + d + " d")(diasEntre(hoyISO(), f.fecha))}</div></td>
+      <td style="max-width:220px;">${ev.slice(0,2).map(chipEvento).join("")}${ev.length>2 ? `<span class="pill">+${ev.length-2}</span>` : ""}</td>
+      <td class="n">${num(otb)}/${num(cap)}<div class="barra-mini" style="margin-left:auto;"><div style="width:${Math.min(100, occ*100)}%"></div></div></td>
+      <td class="n">${signo(pk)}<div class="nota">normal ${tip!=null ? signo(tip) : "—"}</div></td>
+      <td class="n">${num(f.stly)}<div class="nota ${f.pace>0.1?'pos':f.pace<-0.1?'neg':''}">${f.pace!=null ? signo(f.pace*100)+" %" : "—"}</div></td>
+      <td class="n">${num(f.prevision)} <span class="nota">(${pct(f.prevision/cap)})</span>${f.cancel_previstas >= 0.5 ? `<div class="nota">−${num(f.cancel_previstas)} cancel. previstas</div>` : ""}</td>
+      <td class="n">${f.bar ? eur(f.bar) : "—"}<div class="nota">${f.ind ? eur(f.ind) : ""}</div></td>
+      <td class="n">${(r => r && r.n
+        ? `<button type="button" class="comp-celda" data-comp="${f.fecha}" aria-expanded="false">${eur(r.media)}<span class="nota">${r.pos ? `${r.pos}.º de ${r.n}` : "no aparecemos"}</span></button>`
+        : "—")(compPorFecha(f.fecha))}</td>
+      <td style="min-width:190px;">${recTxt}${(f.motivos||[]).length ? `<div class="motivos">${f.motivos.map(esc).join("<br>")}</div>` : ""}</td>
+      <td style="max-width:180px;">${sug}</td>
+      <td><button class="btn-sec" data-fecha="${f.fecha}" data-precio="${f.recomendado||""}">Usar</button></td>
+    </tr>`;
+  }).join("");
+  document.querySelectorAll("#tabla-calendario button[data-comp]").forEach(b => b.addEventListener("click", () => {
+    const tr = b.closest("tr"), sig = tr.nextElementSibling;
+    if(sig && sig.classList.contains("comp-detalle")){ sig.remove(); b.setAttribute("aria-expanded", "false"); return; }
+    const d = document.createElement("tr");
+    d.className = "comp-detalle";
+    d.innerHTML = `<td colspan="${tr.children.length}"><strong>Competencia ${diaSemana(b.dataset.comp)} ${fechaCorta(b.dataset.comp)}</strong>${compTabla(compPorFecha(b.dataset.comp))}</td>`;
+    tr.after(d);
+    b.setAttribute("aria-expanded", "true");
+  }));
+  document.querySelectorAll("#tabla-calendario button[data-fecha]").forEach(b => b.addEventListener("click", () => {
+    renderControlPrecio("control-precio-calendario", b.dataset.fecha, "calendario", b.dataset.precio ? +b.dataset.precio : null);
+    document.getElementById("control-precio-calendario").scrollIntoView({behavior:"smooth", block:"center"});
+  }));
+
+  // fiabilidad
+  const F = (C.fiabilidad || {}).prueba || {};
+  const pa = F.por_antelacion || {};
+  const llen = (C.fiabilidad || {}).llenado || {};
+  document.getElementById("cal-fiabilidad").innerHTML = Object.keys(pa).length ? `
+    <div class="nota" style="margin-bottom:8px;">Prueba sobre ${num(F.noches)} noches (${fechaEU((F.periodo||[])[0])} – ${fechaEU((F.periodo||[])[1])}), haciendo la previsión como si fuera
+      N días antes y comparando con lo que pasó. El ${num(F.noches_llenas_pct,0)} % de esas noches acabó al 95 % o más: decir "irá lleno" ya acierta mucho,
+      así que lo que importa es el error en las noches que <strong>no</strong> se llenaron.</div>
+    <div class="tabla-scroll"><table><thead><tr><th>Antelación</th><th class="n">Error medio (todas)</th><th class="n">Noches flojas</th><th class="n">Error en flojas</th><th class="n">Sesgo en flojas</th></tr></thead><tbody>
+      ${Object.entries(pa).map(([L,v]) => `<tr><td>${L} días</td><td class="n">${num(v.error_medio_pct,1)} %</td><td class="n">${num(v.noches_flojas)}</td>
+        <td class="n">${v.error_noches_flojas_pct!=null ? num(v.error_noches_flojas_pct,1)+" %" : "—"}</td><td class="n">${v.sesgo_noches_flojas_pct!=null ? signo(v.sesgo_noches_flojas_pct,1)+" %" : "—"}</td></tr>`).join("")}
+    </tbody></table></div>
+    <div class="nota" style="margin-top:8px;">Sesgo positivo = la previsión se pasó (esperaba más ocupación de la que hubo). Con tan pocas noches flojas, tómalo como orientación.</div>
+    ${Object.keys(llen).length ? `<div class="nota" style="margin-top:8px;"><strong>Con cuánta antelación se llenó el hotel</strong> (noches al 95 %, mediana por mes): ${Object.entries(llen).slice(-6).map(([m,v]) => `${m.slice(5)}/${m.slice(2,4)}: ${v.dias_antelacion_mediana} d`).join(" · ")}. 0 días = se llenó el mismo día de llegada (demanda de última hora).</div>` : ""}`
+    : `<div class="vacio">La prueba de la previsión se calcula una vez al día.</div>`;
+
+  const cc = C.cancelacion_por_canal || {};
+  const ex = C.expira_deposito || {};
+  document.getElementById("cal-cancelacion").innerHTML = Object.keys(cc).length ? `
+    <div class="tabla-scroll"><table><thead><tr><th>Canal</th><th class="n">Vivas a 90 días</th><th class="n">a 30 días</th><th class="n">a 7 días</th></tr></thead><tbody>
+      ${Object.entries(cc).sort((a,b)=>(b[1]["90"]||0)-(a[1]["90"]||0)).map(([c,v]) => `<tr><td>${esc(c)}</td><td class="n">${pct(v["90"])}</td><td class="n">${pct(v["30"])}</td><td class="n">${pct(v["7"])}</td></tr>`).join("")}
+    </tbody></table></div>
+    <div class="nota" style="margin-top:8px;">De cada 100 habitaciones vivas a esa antelación, cuántas acaban canceladas o en no show (último año). La previsión descuenta estas
+      cancelaciones por canal. Las "Expiradas" del motor no cuentan: son intentos de pago que no se completaron (ninguna tiene nada cobrado),
+      no reservas que estuvieran en cartera. Las reservas en "Depósito" tienen depósito cobrado y no se descuentan${ex.probabilidad!=null ? `; en vivo se ha visto expirar el ${pct(ex.probabilidad)} (sobre ${ex.casos} casos) y eso sí se descuenta` : ""}.</div>`
+    : `<div class="vacio">Sin datos.</div>`;
+
+  const P = C.parametros || {};
+  document.getElementById("cal-explicacion").innerHTML = `<strong>Cómo se calcula la recomendación</strong> (solo BAR SA; cada escalón = ${num(P.paso_pct||8)} %, máximo +${P.max_subida||3} / −${P.max_bajada||2} escalones):
+    <br>• <strong>Ritmo frente a lo normal</strong>: habitaciones vendidas hoy (descontando las cancelaciones previstas) frente a lo que había a esta misma antelación en noches parecidas
+      (mismo día de la semana, misma época del año anterior y últimas 8 semanas, sin noches con evento). +${pct(P.ritmo_alto)} y ${P.ritmo_alto_hab} hab. → +1; +${pct(P.ritmo_muy_alto)} y ${P.ritmo_muy_alto_hab} hab. → +2; ${pct(P.ritmo_bajo)} con previsión &lt; 90 % → −1.
+    <br>• <strong>Año anterior a la misma antelación</strong>: ${pct(P.pace_alto)} o más → +1; ${pct(P.pace_bajo)} o menos con previsión &lt; 90 % → −1.
+    <br>• <strong>Previsión de ocupación</strong>: &lt; ${pct(P.occ_baja)} a ${P.dias_baja} días o menos → −1; &lt; ${pct(P.occ_muy_baja)} a ${P.dias_muy_baja} días → −2. Que vaya a llenarse no sube por sí solo: tu hotel se llena casi siempre.
+    <br>• <strong>Pickup inusual</strong> (lo vendido en los últimos 7 días es el doble de lo normal y al menos ${P.pickup_inusual_min} hab.) → +1. Es la alarma para eventos que aún no están en el calendario.
+    <br>• <strong>Eventos</strong>: impacto alto → +2, medio → +1, y con evento nunca se recomienda bajar.
+    <br>• <strong>Pausa</strong>: si el precio de esa fecha ya se subió en los últimos 7 días, no se vuelve a recomendar subir hasta que siga entrando más de lo normal.
+    <br>Las fechas que la regla de subida tiene a ${eur((DATA.resumen||{}).precio_max||888)} muestran el precio para salir de la protección (calculado sobre el precio anterior).`;
+}
+["cal-rango","cal-solo-cambios","cal-solo-eventos"].forEach(id => document.getElementById(id).addEventListener("change", pintarCalendario));
+
+/* ---------------- PANEL RMS ---------------- */
+function rangoPanel(){
+  const sel = document.getElementById("panel-rango-rapido").value;
+  const hoy = hoyISO();
+  if (sel !== "custom") return [hoy, sumarDias(hoy, +sel)];
+  return [document.getElementById("panel-desde").value || hoy, document.getElementById("panel-hasta").value || sumarDias(hoy,90)];
+}
+function pintarPanel(){
+  const [desde, hasta] = rangoPanel();
+  document.getElementById("panel-desde").value = desde;
+  document.getElementById("panel-hasta").value = hasta;
+  const hoy = hoyISO();
+  const filas = (DATA.kpi_diario||[]).filter(f => f.fecha>=desde && f.fecha<=hasta);
+  const metrica = document.getElementById("panel-metrica").value;
+  const r1 = (v, d=0) => v!=null ? +(+v).toFixed(d) : null;
+  const M = {
+    occ: {titulo:"Ocupación: real vs. año anterior vs. presupuesto", suf:"%",
+          real: f => f.ocupacion!=null ? r1(f.ocupacion*100,1) : null,
+          ly: f => (f.ly_ocupadas!=null && f.disponibles) ? r1(f.ly_ocupadas/f.disponibles*100,1) : null,
+          stly: f => (f.fecha >= hoy && f.stly_ocupadas!=null && f.disponibles) ? r1(f.stly_ocupadas/f.disponibles*100,1) : null,
+          ppto: f => (f.ppto_ocupadas!=null && f.disponibles) ? r1(f.ppto_ocupadas/f.disponibles*100,1) : null},
+    adr: {titulo:"Precio medio (ADR): real vs. año anterior vs. presupuesto", suf:" €",
+          real: f => r1(f.adr), ly: f => r1(f.ly_adr), stly: null, ppto: f => r1(f.ppto_adr)},
+    revpar: {titulo:"RevPAR: real vs. año anterior vs. presupuesto", suf:" €",
+          real: f => r1(f.revpar),
+          ly: f => (f.ly_adr!=null && f.ly_ocupadas!=null && f.disponibles) ? r1(f.ly_adr*f.ly_ocupadas/f.disponibles) : null, stly: null,
+          ppto: f => (f.ppto_adr!=null && f.ppto_ocupadas!=null && f.disponibles) ? r1(f.ppto_adr*f.ppto_ocupadas/f.disponibles) : null},
+    trevpar: {titulo:"Ingreso total por habitación disponible (TRevPAR, con desayunos, SHOPP'N, MEET'N…)", suf:" €",
+          real: f => r1(f.trevpar), ly: f => (f.ly_total!=null && f.disponibles) ? r1(f.ly_total/f.disponibles) : null, stly: null, ppto: null},
+  }[metrica];
+  document.getElementById("panel-metrica-titulo").textContent = M.titulo;
+  const ds = [{label:"Real / vendido", data: filas.map(M.real), borderColor:"#5b8cff", tension:.2},
+              {label:"Año anterior (final)", data: filas.map(M.ly), borderColor:"#92a0bf", borderDash:[5,4], tension:.2}];
+  if(M.stly) ds.push({label:"Año anterior a la misma antelación", data: filas.map(M.stly), borderColor:"#f5a623", tension:.2});
+  if(M.ppto) ds.push({label:"Presupuesto", data: filas.map(M.ppto), borderColor:"#30c9a4", borderDash:[2,3], tension:.2});
+  grafico("chart-panel-ocup", {type:"line", data:{labels:filas.map(f=>fechaCorta(f.fecha)), datasets:ds},
+    options:{responsive:true, interaction:{mode:"index", intersect:false}, scales:{y:{ticks:{callback:v=>v+M.suf}}}}});
+  document.getElementById("panel-nota").textContent = metrica === "occ"
+    ? "Para fechas futuras, 'Año anterior (final)' es cómo ACABÓ la noche del año pasado, así que lo vendido hoy siempre parecerá por detrás. La comparación justa es 'a la misma antelación' (lo que tenías vendido hace un año a estas alturas)."
+    : "En fechas futuras, 'real' es lo que ya está vendido (cartera).";
+  const canales = ["Directo","GUESTPRO","BOOKING","EXPEDIA","DAY","BYHOURS","SLP","OTROS"];
+  const tot = Object.fromEntries(canales.map(c => [c, 0]));
+  filas.forEach(f => canales.forEach(c => tot[c] += (f.canales_noches && f.canales_noches[c]) || 0));
+  grafico("chart-panel-canales", {type:"doughnut", data:{labels:canales, datasets:[{data:canales.map(c=>+tot[c].toFixed(0)), backgroundColor:canales.map(c=>COLOR_CANAL[c])}]},
+    options:{responsive:true, maintainAspectRatio:true}});
+}
+["panel-rango-rapido","panel-desde","panel-hasta","panel-metrica"].forEach(id => document.getElementById(id).addEventListener("change", pintarPanel));
+
+/* ---------------- PICKUP ---------------- */
+function llenarSelectorPickup(){
+  const dias = Object.keys(DATA.pickup_diario||{}).sort().reverse();
+  document.getElementById("pickup-dia").innerHTML = dias.map(d => `<option value="${d}" ${d===hoyISO()?"selected":""}>${fechaEU(d)}${d===hoyISO()?" (hoy)":""}</option>`).join("");
+}
+function pintarPickup(){
+  const dia = document.getElementById("pickup-dia").value || hoyISO();
+  const ventana = +document.getElementById("pickup-ventana").value;
+  const hoy = hoyISO(), hasta = sumarDias(hoy, ventana);
+  const datos = (DATA.pickup_diario||{})[dia] || {};
+  const filas = Object.entries(datos).filter(([f]) => f>=hoy && f<=hasta).sort((a,b)=>a[0].localeCompare(b[0]));
+  document.getElementById("pickup-titulo").textContent = `Reservas entradas el ${fechaEU(dia)}`;
+  document.getElementById("pickup-vacio").style.display = filas.length ? "none" : "block";
+  const kpi = Object.fromEntries((DATA.kpi_diario||[]).map(f => [f.fecha, f]));
+  const pills = o => Object.entries(o).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`<span class="pill">${esc(c)} ${n}</span>`).join("");
+  let html = "";
+  if(filas.length){
+    const tc = {}, tp = {};
+    filas.forEach(([,b]) => { Object.entries(b.canales).forEach(([c,n]) => tc[c]=(tc[c]||0)+n); Object.entries(b.paises).forEach(([p,n]) => tp[p]=(tp[p]||0)+n); });
+    html += `<tr style="font-weight:700;background:var(--panel2);"><td>Total (${filas.length} fechas)</td><td class="n">${num(filas.reduce((s,[,b])=>s+b.n_reservas,0))}</td>
+      <td class="n">${num(filas.reduce((s,[,b])=>s+b.noches,0))}</td><td class="n">${eur(filas.reduce((s,[,b])=>s+b.importe,0))}</td><td class="n">—</td><td>${pills(tc)}</td><td>${pills(tp)}</td></tr>`;
+  }
+  html += filas.map(([f,b]) => { const k = kpi[f] || {};
+    return `<tr><td>${diaSemana(f)} ${fechaEU(f)}</td><td class="n">${b.n_reservas}</td><td class="n">${b.noches}</td><td class="n">${eur(b.importe)}</td>
+      <td class="n">${k.ocupadas!=null && k.disponibles!=null ? `${num(k.ocupadas)} / ${num(k.disponibles)}` : "—"}</td><td>${pills(b.canales)}</td><td>${pills(b.paises)}</td></tr>`; }).join("");
+  document.querySelector("#tabla-pickup tbody").innerHTML = html;
+  const top = Object.entries(datos).sort((a,b)=>b[1].noches-a[1].noches).slice(0,15);
+  grafico("chart-pickup-top", {type:"bar", data:{labels:top.map(f=>fechaEU(f[0])), datasets:[{label:"Noches vendidas", data:top.map(f=>f[1].noches), backgroundColor:"#5b8cff"}]},
+    options:{responsive:true, indexAxis:"y", plugins:{legend:{display:false}}, scales:{x:{ticks:{precision:0}}}}});
+}
+["pickup-dia","pickup-ventana"].forEach(id => document.getElementById(id).addEventListener("change", pintarPickup));
+
+/* ---------------- EVOLUCIÓN ---------------- */
+function llenarSelectorEvolucion(){
+  const fechas = Object.keys(((DATA.curvas||{}).fechas)||{}).sort();
+  const sel = document.getElementById("evolucion-fecha");
+  sel.innerHTML = fechas.map(f => `<option value="${f}">${diaSemana(f)} ${fechaEU(f)}</option>`).join("");
+  const conEvento = ((DATA.calendario||{}).filas||[]).find(f => (f.impacto||0) >= 3 && f.L >= 3);
+  if(conEvento && fechas.includes(conEvento.fecha)) sel.value = conEvento.fecha;
+}
+function pintarEvolucion(){
+  const C = DATA.curvas || {};
+  const fecha = document.getElementById("evolucion-fecha").value;
+  const c = (C.fechas||{})[fecha];
+  const f = calPorFecha()[fecha] || {};
+  if(!c){ document.getElementById("evolucion-tarjetas").innerHTML = `<div class="vacio">Sin datos para esa fecha.</div>`; return; }
+  document.getElementById("evolucion-tarjetas").innerHTML = [
+    ["Vendidas hoy", f.otb!=null ? `${num(f.otb)} / ${num(f.cap)}` : num(f.cartera)],
+    ["Año anterior a la misma antelación", `${num(f.stly)}${f.pace!=null ? ` <span class="nota">(${signo(f.pace*100)} %)</span>` : ""}`],
+    ["Previsión al llegar", `${num(f.prevision)}`],
+    ["BAR SA actual", f.bar ? eur(f.bar) : "—"],
+    ["Recomendado", f.recomendado ? eur(f.recomendado) : (f.pasos ? `${signo(f.pasos)} escalón` : "mantener")],
+  ].map(([e,v]) => `<div class="tarjeta"><div class="etiqueta">${e}</div><div class="valor">${v}</div></div>`).join("")
+   + ((f.eventos||[]).length ? `<div class="tarjeta"><div class="etiqueta">Eventos</div><div>${f.eventos.map(chipEvento).join("")}</div></div>` : "");
+  const leads = C.leads || [];
+  grafico("chart-evolucion-curva", {type:"line", data:{labels:leads.map(L => L === 0 ? "llegada" : `-${L} d`), datasets:[
+      {label:`Este año (${fechaEU(fecha)})`, data:c.este, borderColor:"#5b8cff", backgroundColor:"#5b8cff22", fill:true, tension:.2, spanGaps:false},
+      {label:`Año anterior (${fechaEU(c.fecha_ly)})`, data:c.anterior, borderColor:"#92a0bf", borderDash:[5,4], tension:.2}]},
+    options:{responsive:true, interaction:{mode:"index", intersect:false}, scales:{y:{beginAtZero:true, ticks:{precision:0}}}}});
+  const dec = (DATA.decisiones||[]).filter(d => d.fecha === fecha);
+  document.getElementById("evolucion-decisiones").innerHTML = dec.length ? dec.map(d => `<div class="fila-cambio"><div>${fechaHoraEU(d.cuando)} · ${esc(d.origen)}:
+      ${d.antes!=null ? eur(d.antes)+" → " : ""}<strong>${eur(d.despues)}</strong></div><div>${d.aplicado ? '<span class="badge-confirmado">Aplicado</span>' : '<span class="badge-fallo">No aplicado</span>'}</div></div>`).join("")
+    : `<div class="vacio">Sin cambios de precio registrados para esta fecha.</div>`;
+}
+document.getElementById("evolucion-fecha").addEventListener("change", pintarEvolucion);
+
+/* ---------------- EVENTOS ---------------- */
+function esNuevo(e){ return e.primera_vez && e.avisado !== "línea base" && e.primera_vez.slice(0,10) >= sumarDias(hoyISO(), -7) && !e.descartado && e.fin >= hoyISO(); }
+function pintarEventos(){
+  const E = DATA.eventos || {};
+  const minImp = +document.getElementById("eventos-impacto").value;
+  const meses = +document.getElementById("eventos-meses").value;
+  const hoy = hoyISO(), hasta = sumarDias(hoy, meses * 31);
+  const lista = (E.eventos||[]).filter(e => !e.descartado && e.fin >= hoy && e.inicio <= hasta && (e.impacto||1) >= minImp);
+  const f = E.fuentes || {};
+  const ia = f.busqueda_ia, tm = f.ticketmaster;
+  document.getElementById("eventos-fuentes").innerHTML = `Actualizado ${fechaHoraEU(E.actualizado)} · Fuentes: lista investigada (${num(f.semilla)} eventos con su fuente), hoja Agenda_eventos del Excel (${num(f.manual)})`
+    + `, búsqueda diaria con Claude: ${ia ? (ia.error ? `<span class="neg">error (${esc(ia.error).slice(0,80)})</span>` : `${num(ia.validos)} encontrados hoy`) : "no activa (falta ANTHROPIC_API_KEY o ya se hizo hoy)"}`
+    + `, Ticketmaster: ${tm!=null ? num(tm)+" hoy" : "no activa (falta TICKETMASTER_API_KEY o ya se hizo hoy)"}.`;
+  const porMes = {};
+  lista.forEach(e => (porMes[e.inicio.slice(0,7)] = porMes[e.inicio.slice(0,7)] || []).push(e));
+  const nombresMes = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+  const cal = calPorFecha();
+  document.getElementById("eventos-lista").innerHTML = Object.keys(porMes).length ? Object.entries(porMes).map(([m, evs]) => `
+    <div class="caja"><h2>${nombresMes[+m.slice(5,7)-1]} ${m.slice(0,4)} <span class="nota">(${evs.length})</span></h2>
+      <div class="tabla-scroll"><table><thead><tr><th>Fechas</th><th>Evento</th><th>Recinto</th><th class="n">Impacto</th><th>Noches de hotel</th><th class="n">Vendidas / previsión</th><th>Fuente</th></tr></thead><tbody>
+      ${evs.map(e => { const n = (e.noches||[]).filter(x => x >= hoy); const c0 = cal[n[0]];
+        return `<tr><td>${fechaCorta(e.inicio)}${e.fin!==e.inicio ? "–"+fechaCorta(e.fin) : ""}</td>
+          <td>${esc(e.nombre)} ${esNuevo(e) ? '<span class="pill nuevo">nuevo</span>' : ""}${e.confianza==="anunciado" ? '<span class="pill">fecha provisional</span>' : ""}</td>
+          <td>${esc(e.recinto||"")}</td><td class="n"><span class="pill imp${e.impacto||1}">${e.impacto||1}/3</span></td>
+          <td>${n.length ? n.map(fechaCorta).join(", ") : "—"}</td>
+          <td class="n">${c0 ? `${num(c0.otb!=null?c0.otb:c0.cartera)} / ${num(c0.prevision)}` : "—"}</td>
+          <td>${enlace(e.url, (e.fuente||"fuente").replace("busqueda_ia","búsqueda IA"))}</td></tr>`; }).join("")}
+      </tbody></table></div></div>`).join("")
+    : `<div class="caja vacio">No hay eventos con esos filtros.</div>`;
+  const vig = E.vigilar || [];
+  document.getElementById("eventos-vigilar").innerHTML = vig.length ? vig.map(v => `<div class="fila-cambio"><div><strong>${esc(v.nombre)}</strong>
+    <div class="nota">${esc(v.nota||"")}</div></div><div>${enlace(v.url)}</div></div>`).join("") : `<div class="vacio">Nada pendiente.</div>`;
+  const fac = E.factores || {}, um = E.umbrales || {};
+  document.getElementById("eventos-explicacion").innerHTML = `<strong>Impacto</strong>: personas al día que necesitan hotel = asistentes al día × parte que viene de fuera
+    (supuestos: ${Object.entries(fac).map(([k,v]) => `${k.replace("_"," ")} ${pct(v)}`).join(", ")}). ≥ ${num(um["3"])} → alto (3), ≥ ${num(um["2"])} → medio (2), resto bajo (1).
+    Las ferias y congresos mueven la víspera y las noches hasta el penúltimo día; los conciertos, las noches del concierto.
+    <br><strong>Para añadir, corregir o descartar</strong> un evento: hoja <em>Agenda_eventos</em> del Excel maestro (manda sobre lo automático; para descartar uno automático pon el mismo
+    día de inicio y recinto y "SÍ" en Descartar). Cuando aparece un evento nuevo de impacto medio o alto, llega un correo con la ocupación y el precio recomendado de esas noches.`;
+}
+["eventos-impacto","eventos-meses"].forEach(id => document.getElementById(id).addEventListener("change", pintarEventos));
+
+/* ---------------- CANALES ---------------- */
+function llenarSelectorCanales(){
+  const C = DATA.canales || {};
+  const meses = C.meses || [], act = C.mes_actual;
+  const pasados = meses.filter(m => m < act), futuros = meses.filter(m => m > act);
+  const opts = [];
+  if(pasados.length) opts.push([`ult12`, `Últimos ${pasados.length} meses cerrados`]);
+  if(act) opts.push([act, `Mes actual (${act.slice(5)}/${act.slice(0,4)})`]);
+  if(futuros.length) opts.push([`prox`, `Próximos ${futuros.length} meses (lo vendido)`]);
+  meses.slice().reverse().forEach(m => opts.push([m, `${m.slice(5)}/${m.slice(0,4)}`]));
+  document.getElementById("canales-periodo").innerHTML = opts.map(([v,t]) => `<option value="${v}">${t}</option>`).join("");
+}
+function mesesSeleccionados(){
+  const C = DATA.canales || {}, v = document.getElementById("canales-periodo").value;
+  if(v === "ult12") return (C.meses||[]).filter(m => m < C.mes_actual);
+  if(v === "prox") return (C.meses||[]).filter(m => m > C.mes_actual);
+  return [v];
+}
+function tablaAgregada(dic, meses, idTabla, conSem){
+  const C = DATA.canales || {};
+  const filas = Object.entries(dic||{}).map(([k, porMes]) => {
+    const t = {noches:0, ingreso:0, comision:0, reservas:0, canceladas:0, expiradas:0};
+    meses.forEach(m => { const x = porMes[m]; if(x) Object.keys(t).forEach(c => t[c] += x[c]||0); });
+    return [k, t];
+  }).filter(([,t]) => t.noches || t.reservas).sort((a,b)=>b[1].ingreso-a[1].ingreso);
+  const sem = meses.reduce((s,m) => s + ((C.sem_coste_mes||{})[m]||0), 0);
+  const totN = filas.reduce((s,[,t])=>s+t.noches,0);
+  document.querySelector(`#${idTabla} thead`).innerHTML = `<tr><th>${idTabla==="tabla-canales"?"Canal":"Segmento"}</th><th class="n">Noches</th><th class="n">% noches</th><th class="n">Ingreso</th>
+    <th class="n">Comisión</th>${conSem ? '<th class="n">Coste SEM</th>' : ""}<th class="n">Neto</th><th class="n">ADR</th><th class="n">ADR neto</th><th class="n">% cancel.</th><th class="n">% expiradas</th></tr>`;
+  document.querySelector(`#${idTabla} tbody`).innerHTML = filas.map(([k,t]) => {
+    const s = (conSem && k === "Web directa") ? sem : 0, neto = t.ingreso - t.comision - s;
+    return `<tr><td>${esc(k)}</td><td class="n">${num(t.noches)}</td><td class="n">${totN ? pct(t.noches/totN) : "—"}</td><td class="n">${eur(t.ingreso)}</td><td class="n">${eur(t.comision)}</td>
+      ${conSem ? `<td class="n">${s ? eur(s) : "—"}</td>` : ""}<td class="n">${eur(neto)}</td><td class="n">${t.noches ? eur(t.ingreso/t.noches) : "—"}</td>
+      <td class="n"><strong>${t.noches ? eur(neto/t.noches) : "—"}</strong></td><td class="n">${t.reservas ? pct(t.canceladas/t.reservas) : "—"}</td><td class="n">${t.reservas ? pct(t.expiradas/t.reservas) : "—"}</td></tr>`;
+  }).join("");
+  return {filas, sem, totN, ingreso: filas.reduce((s,[,t])=>s+t.ingreso,0), comision: filas.reduce((s,[,t])=>s+t.comision,0)};
+}
+function pintarCanales(){
+  const C = DATA.canales || {};
+  if(!C.meses){ document.getElementById("canales-tarjetas").innerHTML = `<div class="vacio">Sin datos de canales todavía.</div>`; return; }
+  const meses = mesesSeleccionados();
+  const r = tablaAgregada(C.por_canal, meses, "tabla-canales", true);
+  tablaAgregada(C.por_segmento, meses, "tabla-segmentos", false);
+  const web = (r.filas.find(([k]) => k === "Web directa") || [null, {noches:0}])[1];
+  document.getElementById("canales-tarjetas").innerHTML = [
+    ["Noches vendidas", num(r.totN)], ["Ingreso habitaciones", eur(r.ingreso)], ["Comisiones", eur(r.comision)],
+    ["Coste SEM (Google Ads)", r.sem ? eur(r.sem) : "—"], ["Coste SEM por noche web directa", (r.sem && web.noches) ? eur(r.sem/web.noches) : "—"],
+  ].map(([e,v]) => `<div class="tarjeta"><div class="etiqueta">${e}</div><div class="valor">${v}</div></div>`).join("");
+  const rit = Object.entries(C.ritmo_segmento_90d || {}).sort((a,b)=>b[1].cartera-a[1].cartera);
+  document.querySelector("#tabla-ritmo-seg tbody").innerHTML = rit.map(([s,v]) => `<tr><td>${esc(s)}</td><td class="n">${num(v.cartera)}</td><td class="n">${num(v.stly)}</td>
+    <td class="n ${v.cartera>=v.stly?'pos':'neg'}">${v.stly ? signo((v.cartera/v.stly-1)*100)+" %" : "—"}</td></tr>`).join("");
+  pintarPaises();
+}
+function pintarPaises(){
+  const hoy = hoyISO(), hasta = sumarDias(hoy, +document.getElementById("canales-paises-rango").value);
+  const tot = {};
+  Object.entries(DATA.nacionalidades||{}).forEach(([f,ps]) => { if(f>=hoy && f<=hasta) Object.entries(ps).forEach(([p,n]) => tot[p]=(tot[p]||0)+n); });
+  const top = Object.entries(tot).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  grafico("chart-canales-paises", {type:"bar", data:{labels:top.map(x=>x[0]), datasets:[{label:"Noches", data:top.map(x=>x[1]), backgroundColor:"#5b8cff"}]},
+    options:{responsive:true, indexAxis:"y", plugins:{legend:{display:false}}, scales:{x:{ticks:{precision:0}}}}});
+}
+document.getElementById("canales-periodo").addEventListener("change", pintarCanales);
+document.getElementById("canales-paises-rango").addEventListener("change", pintarPaises);
+
+/* ---------------- GRUPOS ---------------- */
+function pintarGrupo(){
+  const cal = calPorFecha();
+  const llegada = document.getElementById("grupo-llegada").value;
+  const noches = Math.max(1, +document.getElementById("grupo-noches").value || 1);
+  const hab = Math.max(1, +document.getElementById("grupo-hab").value || 1);
+  const precio = +document.getElementById("grupo-precio").value || 0;
+  let desplazado = 0, sinDato = 0;
+  const filas = [];
+  for(let i = 0; i < noches; i++){
+    const f = sumarDias(llegada, i), c = cal[f];
+    if(!c){ filas.push(`<tr><td>${diaSemana(f)} ${fechaEU(f)}</td><td colspan="6" class="nota">Fuera del calendario (más de 365 días o fecha pasada).</td></tr>`); sinDato++; continue; }
+    const cap = c.cap || 80;
+    const prevision = Math.min(c.prevision_sin_limite, cap * 1.3);
+    const desp = Math.max(0, Math.min(hab, prevision + hab - cap));
+    const adr = c.adr_otb || c.ly_adr || (c.bar ? c.bar * 0.85 : null);
+    const ingDesp = adr ? desp * adr : null;
+    if(ingDesp != null) desplazado += ingDesp; else sinDato++;
+    filas.push(`<tr><td>${diaSemana(f)} ${fechaEU(f)}</td><td class="n">${num(c.prevision_sin_limite,0)}</td><td class="n">${num(cap)}</td><td class="n">${num(desp,1)}</td>
+      <td class="n">${eur(adr)}<div class="nota">${c.adr_otb ? "ADR vendido" : c.ly_adr ? "ADR año anterior" : c.bar ? "85 % BAR SA" : "sin dato"}</div></td>
+      <td class="n">${eur(ingDesp)}</td><td>${(c.eventos||[]).slice(0,2).map(chipEvento).join("")}</td></tr>`);
+  }
+  document.querySelector("#tabla-grupo tbody").innerHTML = filas.join("");
+  const ingGrupo = hab * noches * precio;
+  const neto = ingGrupo - desplazado;
+  const minimo = desplazado / (hab * noches);
+  document.getElementById("grupo-tarjetas").innerHTML = [
+    ["Ingreso del grupo", eur(ingGrupo)], ["Ingreso individual que desplaza", eur(desplazado)],
+    ["Ganancia neta estimada", `<span class="${neto>=0?'pos':'neg'}">${eur(neto)}</span>`],
+    ["Precio mínimo para no perder", `${eur(minimo)} <span class="nota">/hab y noche</span>`],
+  ].map(([e,v]) => `<div class="tarjeta"><div class="etiqueta">${e}</div><div class="valor">${v}</div></div>`).join("")
+   + (sinDato ? `<div class="tarjeta"><div class="etiqueta">Aviso</div><div class="nota">${sinDato} noche(s) sin datos suficientes: el resultado está incompleto.</div></div>` : "");
+}
+["grupo-llegada","grupo-noches","grupo-hab","grupo-precio"].forEach(id => document.getElementById(id).addEventListener("input", pintarGrupo));
+
+/* ---------------- SEM ---------------- */
+function rangoSem(){
+  const sel = document.getElementById("sem-rango-rapido").value;
+  const hoy = hoyISO();
+  if(sel === "hoy") return [hoy, hoy];
+  if(sel === "ayer") { const a = sumarDias(hoy,-1); return [a,a]; }
+  if(sel === "mes") return [primerDiaMes(hoy), hoy];
+  if(sel === "mes_anterior") return [primerDiaMes(hoy,1), ultimoDiaMes(primerDiaMes(hoy,1))];
+  if(sel === "30") return [sumarDias(hoy,-30), hoy];
+  return [document.getElementById("sem-desde").value || primerDiaMes(hoy), document.getElementById("sem-hasta").value || hoy];
+}
+function pintarSem(){
+  const [desde, hasta] = rangoSem();
+  document.getElementById("sem-desde").value = desde;
+  document.getElementById("sem-hasta").value = hasta;
+  const filas = (DATA.sem||[]).filter(r => r.creada>=desde && r.creada<=hasta);
+  const ads = (DATA.ads_costes||[]).filter(r => r.fecha>=desde && r.fecha<=hasta);
+  const sinAtribucion = filas.filter(r => !r.campaign && !r.source && !r.medium);
+  const importeTotal = filas.reduce((s,r)=>s+(r.importe||0),0);
+  const costeAdsTotal = ads.reduce((s,r)=>s+(r.coste||0),0);
+  const clicsAdsTotal = ads.reduce((s,r)=>s+(r.clics||0),0);
+  const cpcMedio = clicsAdsTotal ? costeAdsTotal/clicsAdsTotal : null;
+  // reservas cuya utm_campaign es una campaña de Google Ads identificada (campana_utm): el coste de Ads se reparte entre ellas,
+  // no entre todas las reservas del periodo (la mayoría no vienen de Ads)
+  const campanasAds = new Set(ads.map(r => r.campana_utm).filter(Boolean));
+  const reservasAds = filas.filter(r => r.campaign && campanasAds.has(r.campaign)).length;
+  const costePorReservaAds = reservasAds ? costeAdsTotal/reservasAds : null;
+  document.getElementById("sem-tarjetas").innerHTML = [
+    ["Reservas en el periodo", num(filas.length)], ["Importe total del periodo", eur(importeTotal)],
+    ["Sin campaña/origen (directo u otros)", num(sinAtribucion.length)], ["Coste Google Ads (periodo)", eur(costeAdsTotal)],
+    ["Clics Google Ads (periodo)", num(clicsAdsTotal)], ["CPC medio", cpcMedio!=null ? eur(cpcMedio, 2) : "—"],
+    [`Coste Ads / reserva de Ads (${num(reservasAds)} reservas)`, costePorReservaAds!=null ? eur(costePorReservaAds, 2) : "—"],
+  ].map(([e,v]) => `<div class="tarjeta"><div class="etiqueta">${e}</div><div class="valor">${v}</div></div>`).join("");
+  function agrupar(clave){
+    const g = {};
+    filas.forEach(r => { const k = clave(r); if(!k) return; if(!g[k]) g[k] = {reservas:0, importe:0}; g[k].reservas++; g[k].importe += (r.importe||0); });
+    return Object.entries(g).sort((a,b)=>b[1].importe-a[1].importe);
+  }
+  // coste/clics de Ads por el nombre de campaña ya traducido al formato utm_campaign (campana_utm, MAPEO_CAMPANAS_ADS en rms_actualizador.py)
+  const adsPorCampanaUtm = {};
+  ads.forEach(r => { if(!r.campana_utm) return; const a = adsPorCampanaUtm[r.campana_utm] = adsPorCampanaUtm[r.campana_utm] || {coste:0, clics:0}; a.coste += (r.coste||0); a.clics += (r.clics||0); });
+  const porCampania = agrupar(r => r.campaign);
+  document.getElementById("sem-campania-vacio").style.display = porCampania.length ? "none" : "block";
+  document.querySelector("#tabla-sem-campania tbody").innerHTML = porCampania.map(([k,v]) => {
+    const ac = adsPorCampanaUtm[k];
+    return `<tr><td>${esc(k)}</td><td class="n">${num(v.reservas)}</td><td class="n">${eur(v.importe)}</td><td class="n">${ac ? num(ac.clics) : "—"}</td>
+      <td class="n">${ac ? eur(ac.coste) : "—"}</td><td class="n">${(ac && v.reservas) ? eur(ac.coste / v.reservas) : "—"}</td></tr>`;
+  }).join("");
+  const porOrigen = agrupar(r => (r.source || r.medium) ? `${r.source || "?"} / ${r.medium || "?"}` : null);
+  document.getElementById("sem-origen-vacio").style.display = porOrigen.length ? "none" : "block";
+  document.querySelector("#tabla-sem-origen tbody").innerHTML = porOrigen.map(([k,v]) => `<tr><td>${esc(k)}</td><td class="n">${num(v.reservas)}</td><td class="n">${eur(v.importe)}</td></tr>`).join("");
+  const porCampanaAds = {};
+  ads.forEach(r => { const k = r.campana || "(sin nombre)"; const a = porCampanaAds[k] = porCampanaAds[k] || {impresiones:0, clics:0, coste:0, conversiones:0};
+    a.impresiones += (r.impresiones||0); a.clics += (r.clics||0); a.coste += (r.coste||0); a.conversiones += (r.conversiones||0); });
+  const filasAds = Object.entries(porCampanaAds).sort((a,b)=>b[1].coste-a[1].coste);
+  document.getElementById("sem-ads-vacio").style.display = filasAds.length ? "none" : "block";
+  document.querySelector("#tabla-sem-ads tbody").innerHTML = filasAds.map(([k,v]) => `<tr><td>${esc(k)}</td><td class="n">${num(v.impresiones)}</td><td class="n">${num(v.clics)}</td>
+    <td class="n">${v.impresiones ? num(v.clics/v.impresiones*100, 2)+" %" : "—"}</td><td class="n">${v.clics ? eur(v.coste/v.clics, 2) : "—"}</td><td class="n">${eur(v.coste)}</td><td class="n">${num(v.conversiones)}</td></tr>`).join("");
+}
+["sem-rango-rapido","sem-desde","sem-hasta"].forEach(id => document.getElementById(id).addEventListener("change", pintarSem));
+
+/* ---------------- arranque ---------------- */
+(async function(){
+  if(!(await cargarTodo())) return;          // sin sesión: ya va camino de /login
+  const pasos = [pintarCabecera, pintarResumen, pintarCalendario, pintarCompetencia, pintarPanel, () => { llenarSelectorPickup(); pintarPickup(); },
+    () => { llenarSelectorEvolucion(); pintarEvolucion(); }, pintarEventos, () => { llenarSelectorCanales(); pintarCanales(); },
+    () => { document.getElementById("grupo-llegada").value = sumarDias(hoyISO(), 30); pintarGrupo(); }, pintarSem,
+    () => renderControlPrecio("control-precio-calendario", hoyISO(), "calendario")];
+  for(const p of pasos){ try{ p(); }catch(e){ console.error("Error pintando una pantalla:", e); } }   // una pantalla con datos raros no tumba las demás
+})();
+</script>
+</body>
+</html>
